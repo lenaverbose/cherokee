@@ -900,7 +900,7 @@ B.cohorts=()=>{
   // ---- Cumulative lead conversion by age ----
   const cum=a=>{let s=0;return a.map(x=>s+=x);};
   const ageLab=Array.from({length:N},(_,i)=>'Mo '+i);
-  const pickL=[0,6,7,9], colL={0:C.slate,6:C.red,7:C.amber,9:C.navy};
+  const pickL=[0,6,7,8,9,10], colL={0:C.slate,6:C.red,7:C.amber,8:C.sms,9:C.navy,10:C.green};
   new Chart($('#cLeadCurve'),{type:'line',data:{labels:ageLab,datasets:pickL.map(i=>({
       label:M[i],data:cum(L.v[i]),borderColor:colL[i],backgroundColor:colL[i],
       tension:.3,borderWidth:2.4,pointRadius:2.2,borderDash:i<FI?[5,4]:[]}))},
@@ -912,7 +912,7 @@ B.cohorts=()=>{
   // ---- Cumulative value per customer ----
   const cumP=i=>{const o=[P.first[i]];let s=P.first[i];P.v[i].forEach(x=>o.push(s+=x));return o;};
   const ltvLab=['1st order'].concat(Array.from({length:N},(_,i)=>'Mo '+i));
-  const pickP=[0,6,7,9], colP={0:C.slate,6:C.red,7:C.amber,9:C.navy};
+  const pickP=[0,6,7,8,9,10], colP={0:C.slate,6:C.red,7:C.amber,8:C.sms,9:C.navy,10:C.green};
   new Chart($('#cPurchLTV'),{type:'line',data:{labels:ltvLab,datasets:pickP.map(i=>({
       label:M[i],data:cumP(i),borderColor:colP[i],backgroundColor:colP[i],
       tension:.3,borderWidth:2.4,pointRadius:2.2,borderDash:i<FI?[5,4]:[]}))},
