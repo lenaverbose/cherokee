@@ -3,733 +3,948 @@
 <head>
 <meta charset="utf-8"/>
 <meta name="viewport" content="width=device-width, initial-scale=1"/>
-<title>Cherokee Lifecycle Strategy</title>
+<title>Cherokee — Email & SMS Performance Dashboard</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
 <style>
 :root{
-  --navy:#000255; --navy2:#00058D; --accent:#00058D; --accent-bg:#e7e8f6;
-  --blue:#1f34d6; --red:#c0473f; --green:#2e8b6f; --gold:#b9791b; --slate:#5a6b7c;
-  --ink:#101233; --mut:#5d6688; --line:#e6e7ee; --bg:#f4f5f9; --card:#ffffff;
-  --shadow:0 1px 3px rgba(0,2,85,.07),0 6px 18px rgba(0,2,85,.05);
+  --navy:#000255; --navy2:#00058D; --teal:#00058D; --teal-l:#3a44b5; --teal-bg:#e7e8f6;
+  --amber:#122EEA; --red:#c0473f; --green:#2e8b6f; --sms:#6E79E8; --ink:#101233; --mut:#5d6688;
+  --line:#e6e7ee; --bg:#f4f5f9; --card:#ffffff; --shadow:0 1px 3px rgba(0,2,85,.07),0 6px 18px rgba(0,2,85,.05);
 }
 *{box-sizing:border-box}
-body{margin:0;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;background:var(--bg);color:var(--ink);line-height:1.55;-webkit-font-smoothing:antialiased}
-.wrap{max-width:1000px;margin:0 auto;padding:0 24px}
-header.top{background:linear-gradient(120deg,var(--navy),var(--navy2));color:#fff;padding:38px 0 30px}
-header.top h1{margin:0;font-size:27px;letter-spacing:-.4px;font-weight:700}
-header.top .sub{color:#c3cbea;font-size:14px;margin-top:8px;max-width:780px}
-
-nav.tabs{position:sticky;top:0;z-index:20;background:rgba(255,255,255,.97);backdrop-filter:blur(8px);border-bottom:1px solid var(--line);box-shadow:0 1px 6px rgba(16,40,70,.05)}
+body{margin:0;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;background:var(--bg);color:var(--ink);line-height:1.5;-webkit-font-smoothing:antialiased}
+.wrap{max-width:1180px;margin:0 auto;padding:0 22px}
+header.top{background:linear-gradient(120deg,var(--navy),var(--navy2));color:#fff;padding:30px 0 26px}
+header.top h1{margin:0;font-size:25px;letter-spacing:-.4px;font-weight:700}
+header.top .sub{color:#adc1d8;font-size:13.5px;margin-top:6px;max-width:800px}
+.tagrow{margin-top:14px;display:flex;gap:8px;flex-wrap:wrap}
+.tag{background:rgba(255,255,255,.12);border:1px solid rgba(255,255,255,.18);color:#dce8f4;font-size:11.5px;padding:4px 10px;border-radius:20px}
+nav.tabs{position:sticky;top:0;z-index:20;background:rgba(255,255,255,.96);backdrop-filter:blur(8px);border-bottom:1px solid var(--line);box-shadow:0 1px 6px rgba(16,40,70,.04)}
 nav.tabs .wrap{display:flex;gap:2px;overflow-x:auto}
-nav.tabs .tab{font:inherit;background:none;border:0;cursor:pointer;font-size:13.5px;font-weight:600;color:var(--mut);padding:14px 16px;white-space:nowrap;border-bottom:3px solid transparent}
-nav.tabs .tab:hover{color:var(--navy)}
-nav.tabs .tab.active{color:var(--navy);border-bottom-color:var(--accent)}
-
-main .wrap{padding:10px 24px 40px}
-.panel{display:none}
-.panel.active{display:block}
-section{padding:34px 0}
-section + section{border-top:1px solid var(--line)}
-.eyebrow{font-size:11px;font-weight:700;letter-spacing:.6px;text-transform:uppercase;color:var(--accent);margin-bottom:7px}
-h2.sec{font-size:22px;margin:0 0 10px;letter-spacing:-.3px;max-width:820px}
-p.lead{color:var(--mut);font-size:14.5px;margin:0 0 22px;max-width:820px}
-p.lead b{color:var(--ink)}
-.story p{font-size:15px;margin:0 0 14px;max-width:770px;color:#2a3345}
-.story p b{color:var(--navy)}
-
-.kpis{display:grid;grid-template-columns:repeat(4,1fr);gap:14px;margin:22px 0}
-.kpi{background:var(--card);border:1px solid var(--line);border-radius:13px;padding:16px 16px;box-shadow:var(--shadow)}
-.kpi .lab{font-size:11px;color:var(--mut);font-weight:600;text-transform:uppercase;letter-spacing:.3px}
-.kpi .val{font-size:24px;font-weight:750;margin-top:6px;letter-spacing:-.5px;color:var(--navy)}
-.kpi .note{font-size:11.5px;color:var(--mut);margin-top:4px}
-
-.headline-find{background:linear-gradient(120deg,#f3f4fc,#eef0fb);border:1px solid #d9dcf3;border-radius:14px;padding:22px 24px;margin:22px 0 6px}
-.headline-find .tag{font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.5px;color:var(--accent);margin-bottom:6px}
-.headline-find h3{margin:0 0 8px;font-size:19px;color:var(--navy);letter-spacing:-.3px}
-.headline-find p{margin:0;font-size:14px;color:#3a4358;max-width:800px}
-.headline-find p b{color:var(--navy)}
-
-.callout{display:flex;gap:13px;background:var(--card);border:1px solid var(--line);border-left:4px solid var(--accent);border-radius:10px;padding:16px 18px;box-shadow:var(--shadow);margin:16px 0}
-.callout .ico{flex:0 0 26px;height:26px;border-radius:7px;background:var(--accent-bg);color:var(--accent);display:flex;align-items:center;justify-content:center;font-weight:800;font-size:14px}
-.callout.opp{border-left-color:var(--blue)} .callout.opp .ico{background:#e7e9fd;color:var(--blue)}
-.callout h5{margin:0 0 3px;font-size:14px}
-.callout p{margin:0;font-size:13.4px;color:#3d4d5c;max-width:none}
-
-/* compact segmentation boxes */
-.seg-grid{display:grid;grid-template-columns:repeat(6,1fr);gap:12px;margin-top:18px}
-.seg-card{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:14px 14px;box-shadow:var(--shadow);display:flex;flex-direction:column;gap:10px}
-.seg-top{display:flex;align-items:center;justify-content:space-between}
-.seg-ico{width:34px;height:34px;border-radius:9px;display:flex;align-items:center;justify-content:center}
-.seg-ico svg{width:19px;height:19px}
-.seg-ico.ready{background:#e6f5ee;color:var(--green)}
-.seg-ico.needsdata{background:#fdf3e3;color:var(--gold)}
-.seg-card h4{margin:0;font-size:13px;color:var(--navy);line-height:1.3}
-.status{display:inline-block;font-size:9.5px;font-weight:700;padding:3px 8px;border-radius:20px;letter-spacing:.2px}
-.status.ready{background:#e6f5ee;color:var(--green)}
-.status.needsdata{background:#fdf3e3;color:var(--gold)}
-
-.themes{display:grid;grid-template-columns:repeat(5,1fr);gap:12px;margin-top:18px}
-.theme{background:var(--card);border:1px solid var(--line);border-top:3px solid var(--accent);border-radius:11px;padding:14px 15px;box-shadow:var(--shadow)}
-.theme h5{margin:0 0 5px;font-size:13px;color:var(--navy)}
-.theme p{margin:0;font-size:12px;color:var(--mut);line-height:1.45}
-
-/* quick wins */
-.qw-card{background:var(--card);border:1px solid var(--line);border-radius:13px;padding:18px 20px;box-shadow:var(--shadow);margin-bottom:14px;display:flex;gap:16px}
-.qw-num{flex:0 0 34px;height:34px;border-radius:9px;background:var(--navy);color:#fff;display:flex;align-items:center;justify-content:center;font-weight:750;font-size:15px}
-.qw-body{flex:1;min-width:0}
-.qw-card h4{margin:3px 0 3px;font-size:16px;color:var(--navy)}
-.qw-goal{font-size:12.5px;color:var(--green);font-weight:600;margin:0 0 8px}
-.qw-card ul{margin:6px 0 0;padding-left:18px;font-size:13.4px;color:#2a3345}
-.qw-card li{margin-bottom:5px}
-.qw-tags{margin-top:11px;display:flex;flex-wrap:wrap;gap:6px}
-.qw-tag{font-size:10.5px;font-weight:600;background:var(--accent-bg);color:var(--accent);padding:3px 9px;border-radius:20px}
-.qw-tag.dep{background:#fdf3e3;color:var(--gold)}
-
-/* big swings (detailed) */
-.bigswing{background:var(--card);border:1px solid var(--line);border-top:3px solid var(--blue);border-radius:14px;padding:24px 26px;box-shadow:var(--shadow);margin-bottom:22px}
-.swing-h{font-size:19px;color:var(--navy);margin:0 0 6px}
-.swing-thesis{font-size:14px;color:#3a4358;margin:0 0 18px;max-width:840px}
-.swing-thesis b{color:var(--navy)}
-.swing-block{margin-bottom:16px}
-.swing-block:last-child{margin-bottom:0}
-.swing-block h5{font-size:11.5px;text-transform:uppercase;letter-spacing:.5px;color:var(--accent);margin:0 0 6px}
-.swing-block p{margin:0 0 6px;font-size:13.6px;color:#2a3345}
-.swing-block ul{margin:4px 0 0;padding-left:19px;font-size:13.6px;color:#2a3345}
-.swing-block li{margin-bottom:6px}
-.swing-block li b{color:var(--navy)}
-.swing-flag{background:#fff8ec;border:1px solid #f1dcae;border-radius:10px;padding:13px 16px;font-size:12.6px;color:#6d5526;margin-top:6px}
-.swing-flag b{color:#5a441c}
-
-/* testing roadmap spreadsheet */
-.tablewrap{overflow-x:auto;margin-top:8px;border:1px solid var(--line);border-radius:12px;box-shadow:var(--shadow)}
-.ttable{width:100%;min-width:820px;border-collapse:collapse;font-size:12.4px;background:var(--card)}
-.ttable th{background:var(--navy);color:#fff;text-align:left;padding:10px 12px;font-size:10.5px;font-weight:700;text-transform:uppercase;letter-spacing:.3px}
-.ttable td{border-top:1px solid var(--line);padding:10px 12px;vertical-align:top;color:#2a3345}
-.ttable tr:nth-child(even) td{background:#fafbfd}
-.ttable .c-launch{font-weight:700;color:var(--navy);white-space:nowrap}
-.ttable .c-test{font-weight:650;color:var(--navy)}
-.ttable .c-pri{font-weight:700;white-space:nowrap}
-.ttable .c-pri.p1{color:var(--green)}
-.ttable .c-pri.p2{color:var(--gold)}
-.ttable .c-pri.found{color:var(--slate)}
-.ttable .c-pri.p3{color:var(--slate)}
-.ttable tr.cat td{background:var(--accent-bg);color:var(--navy);font-weight:700;text-transform:uppercase;letter-spacing:.4px;font-size:10.5px;padding:9px 12px}
-
-/* execution gantt */
-.gantt{margin-top:10px;overflow-x:auto;padding-bottom:6px}
-.gantt-inner{min-width:780px}
-.gantt-phase,.gantt-weeks,.gantt-row{display:grid;grid-template-columns:200px repeat(12,1fr)}
-.g-phase{font-size:10.5px;font-weight:700;color:#fff;padding:5px 8px;border-radius:6px;margin:0 2px 8px;text-align:center;white-space:nowrap;overflow:hidden}
-.g-phase.p1{background:var(--slate)}.g-phase.p2{background:var(--blue)}.g-phase.p3{background:var(--gold)}
-.gantt-weeks .wk{font-size:10px;color:var(--mut);text-align:center;padding:4px 0;border-left:1px solid var(--line)}
-.gantt-row{align-items:center;border-top:1px solid var(--line);min-height:40px}
-.g-label{grid-column:1;font-size:12.3px;color:var(--ink);padding:9px 12px 9px 0;line-height:1.3}
-.g-bar{height:20px;border-radius:6px;margin:0 2px;display:flex;align-items:center;padding:0 8px;font-size:9.5px;color:#fff;font-weight:600;white-space:nowrap;overflow:hidden}
-.g-bar.found{background:var(--slate)}.g-bar.qw{background:var(--green)}.g-bar.swing{background:var(--blue)}
-.gantt-legend{display:flex;gap:18px;margin-top:14px;font-size:11.5px;color:var(--mut)}
-.gantt-legend .lg{display:flex;align-items:center;gap:6px}
-.gantt-legend .lg::before{content:"";width:12px;height:12px;border-radius:3px;display:inline-block}
-.gantt-legend .lg.found::before{background:var(--slate)}
-.gantt-legend .lg.qw::before{background:var(--green)}
-.gantt-legend .lg.swing::before{background:var(--blue)}
-
-.note-box{background:#fff8ec;border:1px solid #f1dcae;border-radius:10px;padding:13px 16px;font-size:12.6px;color:#6d5526;margin-top:20px}
-.note-box b{color:#5a441c}
-
-footer{border-top:1px solid var(--line);padding:22px 0 44px;color:var(--mut);font-size:11.5px}
-@media(max-width:860px){.kpis{grid-template-columns:1fr 1fr}.seg-grid{grid-template-columns:repeat(3,1fr)}.themes{grid-template-columns:1fr 1fr}}
-@media(max-width:560px){.seg-grid{grid-template-columns:repeat(2,1fr)}}
-
+nav.tabs button{appearance:none;border:0;background:none;font:inherit;color:var(--mut);font-weight:600;font-size:13.5px;padding:14px 16px;cursor:pointer;border-bottom:3px solid transparent;white-space:nowrap}
+nav.tabs button:hover{color:var(--navy)}
+nav.tabs button.active{color:var(--teal);border-bottom-color:var(--teal)}
+section.panel{display:none;padding:26px 0 50px}
+section.panel.active{display:block}
+h2.sec{font-size:19px;margin:6px 0 4px;letter-spacing:-.3px}
+.lead{color:var(--mut);font-size:13.5px;margin:0 0 18px;max-width:880px}
+.lead b{color:var(--ink)}
+h3.blk{font-size:15px;margin:30px 0 12px;padding-bottom:7px;border-bottom:1px solid var(--line);letter-spacing:-.2px}
+.kpis{display:grid;grid-template-columns:repeat(4,1fr);gap:14px}
+.kpi{background:var(--card);border:1px solid var(--line);border-radius:13px;padding:16px 16px 15px;box-shadow:var(--shadow)}
+.kpi .lab{font-size:11.5px;color:var(--mut);font-weight:600;text-transform:uppercase;letter-spacing:.4px}
+.kpi .val{font-size:25px;font-weight:750;margin-top:5px;letter-spacing:-.6px;color:var(--navy)}
+.kpi .note{font-size:12px;color:var(--mut);margin-top:3px}
+.kpi.star{border-top:3px solid var(--teal)}
+.star-lab{display:inline-block;font-size:10px;font-weight:800;letter-spacing:.5px;color:var(--teal);background:var(--teal-bg);padding:2px 8px;border-radius:20px;vertical-align:middle;margin-left:6px}
+.grid2{display:grid;grid-template-columns:1fr 1fr;gap:16px}
+.grid3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:16px}
+.card{background:var(--card);border:1px solid var(--line);border-radius:13px;padding:18px;box-shadow:var(--shadow)}
+.card h4{margin:0 0 2px;font-size:14.5px;letter-spacing:-.2px}
+.card .csub{font-size:12px;color:var(--mut);margin:0 0 12px}
+.chartbox{position:relative;height:300px}
+.chartbox.sm{height:250px}
+.chartbox.tall{height:360px}
+table{width:100%;border-collapse:collapse;font-size:12.7px}
+th,td{padding:8px 9px;text-align:right;border-bottom:1px solid var(--line);white-space:nowrap}
+th{font-size:11px;text-transform:uppercase;letter-spacing:.3px;color:var(--mut);font-weight:700;background:#fafbfc}
+th:first-child,td:first-child{text-align:left;white-space:normal}
+tbody tr:hover{background:#f8fafc}
+.tbl-scroll{overflow-x:auto;border:1px solid var(--line);border-radius:11px;background:var(--card);box-shadow:var(--shadow)}
+td.name{font-weight:600;color:var(--navy)}
+tr.subrow td{border-bottom:1px solid var(--line);background:#fbfcfe;color:var(--mut);font-size:11.8px;padding-top:4px;padding-bottom:6px}
+tr.subrow td:first-child{padding-left:22px;font-weight:500}
+.pill{display:inline-block;font-size:10px;font-weight:700;padding:2px 7px;border-radius:20px;letter-spacing:.2px;margin-left:3px}
+.pill.email{background:#eaf1fb;color:#2c5d9e}
+.pill.sms{background:#e9ebfb;color:#3a44b5}
+.bench{display:inline-block;font-size:10.5px;font-weight:700;padding:2px 7px;border-radius:5px}
+.bench.up{background:#e6f5ee;color:var(--green)}
+.bench.dn{background:#fbeae8;color:var(--red)}
+.bench.mid{background:#fdf3e3;color:#b9791b}
+.callout{display:flex;gap:13px;background:var(--card);border:1px solid var(--line);border-left:4px solid var(--teal);border-radius:10px;padding:14px 16px;box-shadow:var(--shadow);margin-bottom:12px}
+.callout .ico{flex:0 0 26px;height:26px;border-radius:7px;background:var(--teal-bg);color:var(--teal);display:flex;align-items:center;justify-content:center;font-weight:800;font-size:14px}
+.callout.win{border-left-color:var(--green)} .callout.win .ico{background:#e6f5ee;color:var(--green)}
+.callout.risk{border-left-color:var(--red)} .callout.risk .ico{background:#fbeae8;color:var(--red)}
+.callout.opp{border-left-color:var(--amber)} .callout.opp .ico{background:#e7e9fd;color:#122EEA}
+.callout h5{margin:0 0 3px;font-size:13.5px}
+.callout p{margin:0;font-size:13px;color:#3d4d5c}
+.callout p b{color:var(--ink)}
+.mut{color:var(--mut)} .sm{font-size:12px}
+.note-box{background:#fff8ec;border:1px solid #f1dcae;border-radius:10px;padding:12px 15px;font-size:12.5px;color:#6d5526;margin-top:14px}
+.abtest{margin-bottom:16px}
+.abhead{display:flex;justify-content:space-between;align-items:flex-start;gap:12px;margin-bottom:14px}
+.abhead h4{margin:3px 0 2px}
+.scope{font-size:10.5px;font-weight:700;letter-spacing:.4px;text-transform:uppercase;color:var(--teal)}
+.conf{flex:0 0 auto;font-size:11px;font-weight:700;padding:4px 10px;border-radius:20px;white-space:nowrap}
+.conf.sig{background:#e6f5ee;color:var(--green)} .conf.dir{background:#fdf3e3;color:#b9791b} .conf.inc{background:#eef1f5;color:#5a6b7c}
+.abvars{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.var{border:1px solid var(--line);border-radius:10px;padding:13px 14px;position:relative;background:#fcfdfe}
+.var.hi{border-color:var(--teal);background:var(--teal-bg)}
+.var .vname{font-weight:700;font-size:13px;color:var(--navy);margin-bottom:2px;padding-right:54px}
+.var .vtag{position:absolute;top:11px;right:11px;font-size:9.5px;font-weight:700;padding:2px 7px;border-radius:20px;background:var(--teal);color:#fff;letter-spacing:.3px}
+.var .vtag.alt{background:var(--slate)}
+.vmetrics{display:grid;grid-template-columns:1fr 1fr 1fr;gap:7px 10px;margin-top:10px}
+.vm{font-size:11px}
+.vm .l{color:var(--mut);font-size:9.5px;text-transform:uppercase;letter-spacing:.3px}
+.vm .v{font-weight:700;color:var(--ink);font-size:13px}
+.vm .v.big{color:var(--teal)}
+.abfoot{margin-top:12px;font-size:12.3px;color:#3d4d5c;border-top:1px dashed var(--line);padding-top:10px}
+.abfoot b{color:var(--ink)}
+.abrprbar{height:8px;border-radius:5px;background:#e9eef3;margin-top:7px;overflow:hidden}
+.abrprbar>span{display:block;height:100%;border-radius:5px}
+@media(max-width:880px){.abvars{grid-template-columns:1fr}}
+.split{display:flex;align-items:center;gap:6px;justify-content:flex-end}
+.bar-mini{height:7px;border-radius:4px;display:inline-block}
+footer{border-top:1px solid var(--line);padding:22px 0 40px;color:var(--mut);font-size:11.5px}
+@media(max-width:880px){.kpis{grid-template-columns:1fr 1fr}.grid2,.grid3{grid-template-columns:1fr}}
+/* cohort heatmap */
+.heatwrap{overflow-x:auto;margin-top:4px}
+table.heat{width:100%;border-collapse:separate;border-spacing:3px;font-size:11.6px}
+table.heat th{background:#fff;font-size:9.5px;text-transform:uppercase;letter-spacing:.2px;color:var(--mut);font-weight:700;padding:5px 6px;text-align:center;border:0;white-space:nowrap}
+table.heat th:first-child{text-align:left}
+table.heat td{text-align:center;padding:6px 7px;border:0;border-radius:5px;white-space:nowrap;font-variant-numeric:tabular-nums;color:var(--ink)}
+table.heat td.ch-lab{text-align:left;font-weight:600;color:var(--mut);background:#fff;padding-left:2px}
+table.heat tr.ch-focus td.ch-lab{color:var(--navy)}
+table.heat tr.ch-focus td.ch-lab::before{content:"";display:inline-block;width:6px;height:6px;border-radius:50%;background:var(--amber);margin-right:7px;vertical-align:middle}
+table.heat tr:hover td:not(.ch-empty){outline:1.5px solid rgba(18,46,234,.25)}
+table.heat td.ch-empty{background:transparent}
+.heatkey{display:flex;align-items:center;gap:9px;font-size:11px;color:var(--mut);margin:10px 2px 0;justify-content:flex-end}
+.heatkey .bar{height:9px;width:120px;border-radius:5px;background:linear-gradient(90deg,#eef1fc,#122EEA)}
 </style>
 </head>
 <body>
-
 <header class="top">
   <div class="wrap">
-    <h1>Cherokee Lifecycle Strategy</h1>
-    <div class="sub">We began with a customer journey mapping exercise to gain a high-level view of Cherokee's existing lifecycle program, from how the brand shows up in search, social, and AI, through purchase and post-purchase. This audit identifies the highest-impact opportunities to grow lifecycle revenue by rebalancing toward triggered flows, activating SMS, deepening personalization, and building loyalty.</div>
+    <h1>Cherokee — Email &amp; SMS Performance Dashboard</h1>
+    <div class="sub">Klaviyo email &amp; SMS performance review. Revenue tracking began January 2026; this covers the first five complete months (Jan–May 2026), benchmarked against current ecommerce / Klaviyo industry standards. Email and SMS are reported separately throughout — including the SMS messages embedded inside flows like Abandoned Cart.</div>
+    <div class="tagrow">
+      <span class="tag">Period: Jan–May 2026</span>
+      <span class="tag">Email + SMS (split out)</span>
+      <span class="tag">14 flows · 139 campaigns</span>
+      <span class="tag">Benchmarked vs. industry</span>
+    </div>
   </div>
 </header>
 
 <nav class="tabs"><div class="wrap">
-  <button class="tab active" data-tab="overview" type="button">Overview</button>
-  <button class="tab" data-tab="quickwins" type="button">Quick Wins</button>
-  <button class="tab" data-tab="bigswings" type="button">Big Swings</button>
-  <button class="tab" data-tab="testing" type="button">Testing Roadmap</button>
-  <button class="tab" data-tab="execution" type="button">Execution Plan</button>
+  <button data-t="exec" class="active">Executive Summary</button>
+  <button data-t="cohorts">Cohorts</button>
+  <button data-t="flows">Flows</button>
+  <button data-t="campaigns">Campaigns</button>
+  <button data-t="abtests">A/B Tests</button>
+  <button data-t="bench">Benchmarks</button>
+  <button data-t="actions">Action Plan</button>
 </div></nav>
 
-<main><div class="wrap">
+<!-- ===================== EXEC ===================== -->
+<section class="panel active" id="exec"><div class="wrap">
+  <h2 class="sec">The headline</h2>
+  <p class="lead">In its first five months, the email &amp; SMS program generated <b>$1.07M</b> in attributed revenue. The story underneath it is concentration: <b>automated flows produce nearly three-quarters of that revenue from under 10% of all sends</b>, while broadcast campaigns do the heavy lifting on volume. By channel, <b>email drives ~$873K (82%) and SMS ~$197K (18%)</b> — SMS is small in volume but the most efficient dollar in the program. The gap to close is what happens <i>after</i> the open: clicks and conversion.</p>
 
-  <!-- ============ OVERVIEW ============ -->
-  <div class="panel active" id="overview">
+  <div class="kpis" id="execKpis"></div>
 
-    <section class="story">
-      <div class="eyebrow">01 · The Story</div>
-      <h2 class="sec">Automated flows earn the revenue. Campaigns take the effort.</h2>
+  <h3 class="blk">Customer value &amp; retention <span class="star-lab">★ STAR METRICS</span></h3>
+  <p class="sm mut" style="margin:-4px 0 12px">The retention picture behind the revenue: what a customer is actually worth, how often they come back, and how concentrated the money is. Pulled from Klaviyo per-customer predictive analytics (historic CLV, order counts, days-between-orders, churn) plus trailing-12-month order aggregates &mdash; a customer-lifetime lens, distinct from the Jan&ndash;May attributed-revenue figures above.</p>
+  <div class="kpis">
+    <div class="kpi star"><div class="lab">Repeat purchase rate</div><div class="val">~25%</div><div class="note">~1 in 4 reorder &middot; ~75% buy only once</div></div>
+    <div class="kpi star"><div class="lab">Customer LTV (median)</div><div class="val">$97</div><div class="note">historic CLV &middot; mean ~$150&ndash;200 (bulk-skewed)</div></div>
+    <div class="kpi star"><div class="lab">Avg order value</div><div class="val">$114</div><div class="note">blended &middot; per-customer median ~$82</div></div>
+    <div class="kpi star"><div class="lab">First order value</div><div class="val">$88</div><div class="note">median &middot; single-order buyers</div></div>
+    <div class="kpi star"><div class="lab">Time between orders</div><div class="val">~55 days</div><div class="note">median for repeat buyers (46&ndash;65)</div></div>
+    <div class="kpi star"><div class="lab">Predicted churn</div><div class="val">~92%</div><div class="note">avg churn probability &middot; lower for repeat buyers</div></div>
+    <div class="kpi star"><div class="lab">Bulk orders</div><div class="val">~5%</div><div class="note">of orders (order value &ge; $250)</div></div>
+    <div class="kpi star"><div class="lab">Revenue from bulk</div><div class="val">~25%</div><div class="note">est. &middot; driven by that ~5% of orders</div></div>
+  </div>
+  <div class="callout opp" style="margin-top:14px"><div class="ico">!</div><div><h5>The retention headline: ~75% of buyers are one-and-done.</h5><p>Order values are healthy and stable (first order ~$88, blended AOV ~$114), but only <b>~25% of customers place a second order</b>, and the typical repeat buyer waits <b>~6&ndash;9 weeks</b>. Converting more first-time buyers into a second purchase is the single biggest profit lever &mdash; a natural target for post-purchase / replenishment flows (see Post Purchase in Flows). A small set of <b>bulk orders (~5%) carries an outsized ~25% of revenue</b>, so protecting those accounts matters too.</p></div></div>
+  <div class="note-box">★ <b>About these star metrics:</b> Sourced from a Klaviyo predictive-analytics pull (per-customer historic CLV, order counts, days-between-orders, churn probability) on a sample of the customer base, plus order aggregates over the trailing 12 months. They are directional (sample-based, &plusmn;a few points) and use order <i>dollar value</i> for the bulk split (unit counts weren&rsquo;t available). This is a lifetime lens and is not directly comparable to the Jan&ndash;May 2026 attributed-revenue numbers above. LTV:CAC is omitted &mdash; CAC isn&rsquo;t available in Klaviyo.</div>
 
-      <div class="kpis">
-        <div class="kpi"><div class="lab">Program revenue</div><div class="val">$1.07M</div><div class="note">Jan-May 2026 · ~$214K/mo</div></div>
-        <div class="kpi"><div class="lab">Flow revenue share</div><div class="val">74%</div><div class="note">from under 10% of sends</div></div>
-        <div class="kpi"><div class="lab">Repeat purchase rate</div><div class="val">~25%</div><div class="note">1 in 4 customers reorder</div></div>
-        <div class="kpi"><div class="lab">First order value</div><div class="val">$88</div><div class="note">median · single-order buyers</div></div>
-      </div>
 
-      <p>Shift effort from manual campaigns into automation. It lowers the team's workload and compounds revenue at the same time, because a flow keeps earning without anyone hitting send.</p>
-
-      <div class="headline-find">
-        <div class="tag">The number that shapes the strategy</div>
-        <h3>Only 1 in 4 customers ever places a second order.</h3>
-        <p>Order value is healthy and holding. First orders average <b>$88</b> and blended AOV sits around <b>$114</b>, so this is not a pricing or acquisition problem. The gap is retention, and it is the single biggest lever Lifecycle can pull on the business right now. The second orders that do happen are driven mostly by batch campaigns; the bet behind this strategy is that automated, personalized, multi-channel journeys grow that rate, and lifetime value with it, over time.</p>
-      </div>
-    </section>
-
-    <section>
-      <div class="eyebrow">02 · The Conversion Gap</div>
-      <h2 class="sec">Opens beat benchmark. Clicks and revenue per send fall short.</h2>
-      <p class="lead">The audience shows up. What happens after the open is where email loses ground, and SMS is already showing what the upside looks like.</p>
-
-      <div class="kpis" style="grid-template-columns:repeat(3,1fr)">
-        <div class="kpi"><div class="lab">Email open rate</div><div class="val">52%</div><div class="note">vs. ~38% industry norm</div></div>
-        <div class="kpi"><div class="lab">Click rate</div><div class="val">0.53%</div><div class="note">vs. a 2-5% norm</div></div>
-        <div class="kpi"><div class="lab">Campaign revenue / send</div><div class="val">$0.04</div><div class="note">vs. ~$0.11 benchmark</div></div>
-      </div>
-
-      <div class="kpis" style="grid-template-columns:repeat(3,1fr)">
-        <div class="kpi"><div class="lab">SMS click rate</div><div class="val">3.0%</div><div class="note">vs. 0.53% email · clicks 5-6x harder</div></div>
-        <div class="kpi"><div class="lab">SMS revenue / send</div><div class="val">$0.055</div><div class="note">vs. $0.037 for email campaigns</div></div>
-        <div class="kpi"><div class="lab">SMS share of sends</div><div class="val">~9%</div><div class="note">of campaign sends · 18% of program revenue</div></div>
-      </div>
-
-      <div class="callout opp">
-        <div class="ico">&rsaquo;</div>
-        <div><h5>SMS is the proof the audience converts when the message is right.</h5>
-        <p>SMS welcome earns $4.18 per recipient, cart SMS out-earns cart email $1.34 to $0.82, and SMS campaigns click at 3.0% on a fraction of the volume.</p></div>
-      </div>
-
-      <div class="callout opp">
-        <div class="ico">&rsaquo;</div>
-        <div><h5>Subject lines are winning the open. The creative and offer aren't earning the click.</h5>
-        <p>This is the case for the personalization big swing: matching ad creative and product interest to the emails that follow, so what a customer already signaled shapes what they see next.</p></div>
-      </div>
-    </section>
-
-    <section>
-      <div class="eyebrow">03 · Segmentation</div>
-      <h2 class="sec">The list behaves like several audiences. Today it's treated as one.</h2>
-      <p class="lead">Six ways to segment that already have, or nearly have, the data behind them.</p>
-
-      <div class="seg-grid">
-        <div class="seg-card">
-          <div class="seg-top">
-            <div class="seg-ico ready" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M16.5 9.4 7.5 4.2"/><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/><path d="M3.3 7 12 12l8.7-5"/><path d="M12 22V12"/></svg></div>
-            <span class="status ready">Ready now</span>
-          </div>
-          <h4>Bulk vs. non-bulk</h4>
-        </div>
-
-        <div class="seg-card">
-          <div class="seg-top">
-            <div class="seg-ico ready" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><polyline points="21 4 21 9 16 9"/><polyline points="3 20 3 15 8 15"/><path d="M4.5 9a7.5 7.5 0 0 1 12.4-2.8L21 9"/><path d="M3 15l4.1 3.8A7.5 7.5 0 0 0 19.5 15"/></svg></div>
-            <span class="status ready">Ready now</span>
-          </div>
-          <h4>One-time vs. repeat buyer</h4>
-        </div>
-
-        <div class="seg-card">
-          <div class="seg-top">
-            <div class="seg-ico ready" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><circle cx="9" cy="8" r="3.4"/><path d="M9 11.4V18M6.4 15.2h5.2"/><circle cx="16" cy="15" r="3.4"/><path d="M18.4 12.6 21.5 9.5M18.5 9.5h3v3"/></svg></div>
-            <span class="status ready">Ready now</span>
-          </div>
-          <h4>Gender</h4>
-        </div>
-
-        <div class="seg-card">
-          <div class="seg-top">
-            <div class="seg-ico ready" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><polyline points="12 7 12 12 15.5 14"/></svg></div>
-            <span class="status ready">Ready now</span>
-          </div>
-          <h4>Tenure</h4>
-        </div>
-
-        <div class="seg-card">
-          <div class="seg-top">
-            <div class="seg-ico ready" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 12 6.5 12 10 4.5 14 19.5 17.5 12 21 12"/></svg></div>
-            <span class="status ready">Ready now</span>
-          </div>
-          <h4>Engagement tiers</h4>
-        </div>
-
-        <div class="seg-card">
-          <div class="seg-top">
-            <div class="seg-ico needsdata" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M6 3v5.5a4.5 4.5 0 0 0 9 0V3"/><path d="M10.5 12.9v2.3a5.3 5.3 0 0 0 10.5 0v-1"/><circle cx="21" cy="12.2" r="2"/></svg></div>
-            <span class="status needsdata">Needs data</span>
-          </div>
-          <h4>Profession</h4>
-        </div>
-      </div>
-    </section>
-
-    <section>
-      <div class="eyebrow">04 · What Ties It Together</div>
-      <h2 class="sec">The same five threads run through all of it.</h2>
-      <p class="lead">These aren't five separate problems. They're the reasons the same issues keep surfacing across different flows.</p>
-
-      <div class="themes">
-        <div class="theme"><h5>Personalization is missing</h5><p>Gender, color, occupation, and ad-driven intent are collected or buildable, but rarely connected to what actually gets sent.</p></div>
-        <div class="theme"><h5>Triggers run on a calendar, not on behavior</h5><p>Winback's fixed clock and blanket campaign sends fire on a schedule instead of on customer behavior.</p></div>
-        <div class="theme"><h5>Loyalty lives in one flow</h5><p>It should be referenced everywhere: the signup popup, post-purchase, winback, not isolated as its own program.</p></div>
-        <div class="theme"><h5>Reviews and UGC are underused</h5><p>Word of mouth is Cherokee's top acquisition channel, yet that proof rarely shows up inside the emails.</p></div>
-        <div class="theme"><h5>Testing is an opportunity</h5><p>A testing discipline is what keeps proving out what's working and scaling those learnings across the program.</p></div>
-      </div>
-    </section>
-
-    <section>
-      <div class="eyebrow">05 · Measurement to Track Success</div>
-      <h2 class="sec">Three numbers tell us whether this is working.</h2>
-      <p class="lead">Baselines come straight from the performance dashboard (Jan&ndash;May 2026). Goals are pegged to industry benchmarks or to Cherokee's own internal best.</p>
-
-      <div class="headline-find">
-        <div class="tag">North Star</div>
-        <h3>Repeat purchase rate: ~25% today &rarr; 30% in 12 months.</h3>
-        <p>Roughly <b>3 in 4 customers never place a second order</b>, and today's repeat orders come mostly from batch campaigns. As automated, personalized, multi-channel journeys take over that work, the reorder rate and median LTV (<b>$97</b> today) should climb together. With a ~55-day median reorder gap this metric moves in quarters, so progress is read against the global holdout, not month-to-month noise.</p>
-      </div>
-
-      <div class="tablewrap">
-        <table class="ttable">
-          <thead>
-            <tr><th>Metric</th><th>Today</th><th>Goal</th><th>Moved by</th></tr>
-          </thead>
-          <tbody>
-            <tr>
-              <td class="c-test">Repeat purchase rate</td>
-              <td>~25%</td>
-              <td>30% in 12 months</td>
-              <td>Post-purchase, second-purchase, loyalty, winback</td>
-            </tr>
-            <tr>
-              <td class="c-test">Post-purchase RPR</td>
-              <td>$0.22, on a 41&ndash;43% open audience</td>
-              <td>$0.60 (roughly 3x, still under the $1.71 the checkout flow already earns)</td>
-              <td>New post-purchase flow</td>
-            </tr>
-            <tr>
-              <td class="c-test">Lead conversion (month-0 lead&rarr;order)</td>
-              <td>26.7% in May, up from 19.0% in Jan</td>
-              <td>Hold above 25% as paid volume scales, rising as campaign personalization compounds</td>
-              <td>Loyalty popup, personalized welcome, persona routing</td>
-            </tr>
-          </tbody>
-        </table>
-      </div>
-
-      <div class="note-box"><b>How this gets reported:</b> the global holdout, campaign holdouts, and existing-vs-new A/Bs in the Testing Roadmap all feed these three numbers, so the before/after story stays grounded in incremental lift rather than attributed revenue.</div>
-    </section>
-
+  <div class="grid2" style="margin-top:16px">
+    <div class="card">
+      <h4>Monthly attributed revenue</h4>
+      <p class="csub">Flows vs. campaigns, with total trend. May was a record month (+45% MoM) on the back of Nurses Week.</p>
+      <div class="chartbox"><canvas id="cMonthly"></canvas></div>
+    </div>
+    <div class="card">
+      <h4>Where the revenue comes from</h4>
+      <p class="csub">Flows = 73.8% of revenue from 9.7% of sends. The inverse holds for campaigns.</p>
+      <div class="chartbox"><canvas id="cSplit"></canvas></div>
+    </div>
   </div>
 
-  <!-- ============ QUICK WINS ============ -->
-  <div class="panel" id="quickwins">
-    <section>
-      <div class="eyebrow">Quick Wins</div>
-      <h2 class="sec">Five moves that tune what already works.</h2>
-      <p class="lead">In priority order, and testing sits underneath all of them.</p>
-
-      <div class="qw-card">
-        <div class="qw-num">1</div>
-        <div class="qw-body">
-          <h4>Build a new post-purchase flow</h4>
-          <div class="qw-goal">Goal: lift post-purchase RPR from $0.22 toward $0.60 and set up the second purchase.</div>
-          <ul>
-            <li>A branded order confirmation replacing the default transactional template, which wastes an 80-90% open moment today.</li>
-            <li>A "how it fits" check-in once the product has landed, plus how to care for it and how to wear it.</li>
-            <li>A review request 10-14 days after delivery, once an opinion has formed.</li>
-            <li>Set a replenishment expectation early, framed as building out a rotation rather than a literal refill.</li>
-            <li>Embed reviews and UGC of real people wearing Cherokee.</li>
-            <li>Introduce a cross-sell where it makes sense, aimed at single-item buyers, not people who already bought a full set.</li>
-            <li>Exit logic: anyone who starts a return or refund leaves the flow immediately.</li>
-          </ul>
-          <div class="qw-tags"><span class="qw-tag">Metric: post-purchase RPR</span><span class="qw-tag">Segment: first-time vs. repeat</span><span class="qw-tag">Segment: bulk vs. non-bulk</span></div>
-        </div>
-      </div>
-
-      <div class="qw-card">
-        <div class="qw-num">2</div>
-        <div class="qw-body">
-          <h4>Revamp the onboarding / welcome flow</h4>
-          <div class="qw-goal">Goal: increase first-purchase rate by addressing more objections beyond price.</div>
-          <ul>
-            <li>Ask for occupation at signup, and use it to personalize the welcome series.</li>
-            <li>Add education on the collections and how to choose the product that fits their needs.</li>
-            <li>Lead with product value and the brand differentiator, and bring the brand story in.</li>
-            <li>Introduce the loyalty program here once it's live.</li>
-          </ul>
-          <div class="qw-tags"><span class="qw-tag">Metric: lead conversion</span><span class="qw-tag">Test: welcome messaging</span><span class="qw-tag">Test: cross-brand promotion</span><span class="qw-tag dep">Depends on: loyalty live</span></div>
-        </div>
-      </div>
-
-      <div class="qw-card">
-        <div class="qw-num">3</div>
-        <div class="qw-body">
-          <h4>Revamp the second-purchase flow</h4>
-          <div class="qw-goal">Goal: increase reorder rate by making the second purchase feel relevant to them.</div>
-          <ul>
-            <li>Trigger on order quantity plus elapsed time, not a fixed date. Someone who bought one set is a different conversation than someone who bought four.</li>
-            <li>Test reasons to keep buying: an outfit for every day of the week, expanding colors, matching pieces together.</li>
-            <li>Personalize by behavior: whether they returned, whether they reviewed, and whether they were happy.</li>
-            <li>Lean into loyalty's mission and community angle once live, and lead with product value over collections.</li>
-          </ul>
-          <div class="qw-tags"><span class="qw-tag">Metric: repeat purchase rate</span><span class="qw-tag">Test: reason-to-buy messaging</span><span class="qw-tag dep">Depends on: loyalty live</span></div>
-        </div>
-      </div>
-
-      <div class="qw-card">
-        <div class="qw-num">4</div>
-        <div class="qw-body">
-          <h4>Test harder on the abandoned flows</h4>
-          <div class="qw-goal">Goal: increase purchase rate by answering more than the price objection.</div>
-          <ul>
-            <li>Test UGC content and messaging that helps people settle fit and sizing.</li>
-            <li>Test customer reviews and star ratings in the flow.</li>
-            <li>Test product education that speaks to what makes Cherokee different.</li>
-            <li>Confirm whether browse abandonment is pulling dynamic recently-viewed products or a static block, and keep its touch lighter than cart.</li>
-            <li>Expand SMS: test frequency and messaging for high-intent customers, starting with abandoned checkout, which has none today. Cart SMS already out-earns cart email $1.34 to $0.82 per recipient.</li>
-          </ul>
-          <div class="qw-tags"><span class="qw-tag">Test: UGC, fit, reviews</span><span class="qw-tag">Test: SMS frequency</span></div>
-        </div>
-      </div>
-
-      <div class="qw-card">
-        <div class="qw-num">5</div>
-        <div class="qw-body">
-          <h4>Reframe the winback</h4>
-          <div class="qw-goal">Goal: increase repurchase rate by triggering on behavior, not the calendar.</div>
-          <ul>
-            <li>Enter through Klaviyo's existing predictive segments (at risk, inactive) rather than a hand-built timer, with exit logic when someone buys.</li>
-            <li>Escalate messaging before escalating discount: the first touch reminds and resurfaces relevant products, the incentive comes second, a deadline third, so the best customers aren't trained to wait for a code.</li>
-            <li>Segment lapsed customers and talk to each differently: a one-time buyer who never returned is a different conversation than a loyal customer gone quiet.</li>
-          </ul>
-          <div class="qw-tags"><span class="qw-tag">Metric: repeat purchase rate</span><span class="qw-tag">Test: winback messaging</span><span class="qw-tag">Segment: lapsed by history</span></div>
-        </div>
-      </div>
-    </section>
+  <div class="grid2" style="margin-top:16px">
+    <div class="card">
+      <h4>Revenue per send: flows vs. campaigns</h4>
+      <p class="csub">Every flow send is worth ~26× a campaign send. The single most important efficiency fact in the program.</p>
+      <div class="chartbox sm"><canvas id="cRps"></canvas></div>
+    </div>
+    <div class="card">
+      <h4>Revenue by channel (email vs. SMS)</h4>
+      <p class="csub">Email is the volume engine; SMS is small but punches well above its send share.</p>
+      <div class="chartbox sm"><canvas id="cChanRev"></canvas></div>
+    </div>
   </div>
 
-  <!-- ============ BIG SWINGS ============ -->
-  <div class="panel" id="bigswings">
-    <section>
-      <div class="eyebrow">Big Swings</div>
-      <h2 class="sec">Two structural bets behind the retention and personalization gaps.</h2>
-      <p class="lead">Higher lift and higher ceiling than the quick wins. Both cut across more than one flow and need buy-in beyond Lifecycle.</p>
-
-      <div class="bigswing">
-        <h3 class="swing-h">1 · Loyalty program, built as the DTC moat</h3>
-        <p class="swing-thesis">Cherokee can't beat Amazon on speed or price. The reason to buy direct has to be <b>community and belonging</b>. That makes loyalty the moat, so the move is to take it from a side program to the front door of the whole experience, and build it around the grassroots healthcare-worker identity that already makes Nurses Week work.</p>
-
-        <div class="swing-block">
-          <h5>Make loyalty the way in</h5>
-          <ul>
-            <li>Replace the flat 15%-off lead-gen popup with a <b>loyalty signup</b>. Joining is what unlocks the offer (the Abercrombie model: benefits plus $10 off $50 for joining), and account creation becomes the moment we actually capture the customer.</li>
-            <li>Welcome email one leads with program benefits and community, not a discount code.</li>
-            <li>Use signup to build a profile: name, phone, and one zero-party question, occupation, that we can personalize on later.</li>
-          </ul>
-        </div>
-
-        <div class="swing-block">
-          <h5>Reward the behaviors that predict LTV</h5>
-          <ul>
-            <li>Award points for reviews, photo and UGC submissions, referrals, and profile or survey completion, not only for spend.</li>
-            <li>Front-load points in the first week or two to train the habit while the first purchase is still fresh.</li>
-            <li>Build a structured refer-a-friend and UGC capture program inside it, since word of mouth is the top acquisition channel and this feeds it at low cost.</li>
-          </ul>
-        </div>
-
-        <div class="swing-block">
-          <h5>Embed it across every flow, not one tab</h5>
-          <ul>
-            <li>Post-purchase confirmation states points earned, status, and progress to the next reward ("one purchase from $50 off").</li>
-            <li>Abandoned cart and checkout can reference a store-credit balance.</li>
-            <li>Winback can lead with "you have $X in rewards" as an alternative to a fresh discount.</li>
-          </ul>
-        </div>
-
-        <div class="swing-block">
-          <h5>The community and mission angle</h5>
-          <ul>
-            <li>Let members <b>donate points to a cause</b> they care about (the Daisy Foundation, or scrubs for people in need). Test this in post-purchase.</li>
-            <li>Turn reviews and five-star signals into a flywheel: incentivize the behaviors with points, then use the signal to trigger the next relevant message.</li>
-          </ul>
-        </div>
-
-        <div class="swing-flag"><b>What it needs:</b> this is cross-functional with product and site teams, because it changes signup capability and loyalty exposure, not just email. Tiering (flat vs. tiered, and milestone or career-anniversary tiers that would need a profession or tenure field) is not defined yet, so recommend a scoped loyalty PRD kickoff before build.</div>
-      </div>
-
-      <div class="bigswing">
-        <h3 class="swing-h">2 · Personalization by persona</h3>
-        <p class="swing-thesis">When someone enters lifecycle, all we keep is an email address, even though they already told us a lot by <b>which ad they clicked</b>. The bet is to close the gap between paid media and lifecycle, so what a customer signaled up front shapes the messaging they get next, not just the product but the reason they were interested.</p>
-
-        <div class="swing-block">
-          <h5>Read the ad, not just the click</h5>
-          <ul>
-            <li>Phi's MVP classifies ad creative into personas and themes (explorer vs. deal-seeker, plus pain point, desired outcome, and emotional driver) and outputs Klaviyo-ready fields.</li>
-            <li>UTMs alone only give lead source. The value is understanding what is actually in the ad, which is what the classifier adds.</li>
-          </ul>
-        </div>
-
-        <div class="swing-block">
-          <h5>Thread it into lifecycle</h5>
-          <ul>
-            <li>Carry the ad's product, color, and message into the popup, welcome series, and abandonment emails. Someone who clicked a maroon scrub ad sees maroon in the emails that follow.</li>
-            <li>Route by persona: deal-seekers see offers, explorers see product discovery and new arrivals. If a cohort isn't made of deal-seekers, we may not need to discount them at all.</li>
-          </ul>
-        </div>
-
-        <div class="swing-block">
-          <h5>Weight the signals over time</h5>
-          <p>At signup, weight the ad context heavily, because there's no lifecycle behavior yet. As someone purchases and engages, shift the weight toward their own behavior, with the model's confidence scores adjusting as more signal comes in.</p>
-        </div>
-
-        <div class="swing-block">
-          <h5>How we start</h5>
-          <ul>
-            <li>Pull a manual list of customers who clicked a specific ad, append the persona fields, and test personalized messaging against a holdout to measure lift.</li>
-            <li>Work with New Engen on ad taxonomies and UTMs so this can scale beyond the MVP.</li>
-          </ul>
-        </div>
-
-        <div class="swing-block">
-          <h5>The further horizon</h5>
-          <ul>
-            <li><b>Gender-based dynamic content:</b> the men/women question is already asked but unused, and behavior on male vs. female SKUs can infer it too.</li>
-            <li><b>Catalog-wide color and product personalization:</b> someone required to wear one color sees only that color, while explorers see the range. This needs a color-level product catalog built first.</li>
-          </ul>
-        </div>
-
-        <div class="swing-flag"><b>What it needs:</b> cross-functional buy-in from paid media (New Engen) and product, the classifier MVP moving from prototype to production, and an agreed ad taxonomy and UTM structure so persona fields scale beyond the first manual list.</div>
-      </div>
-    </section>
+  <div class="grid2" style="margin-top:16px">
+    <div class="card">
+      <h4>List growth — net new subscribers / month</h4>
+      <p class="csub">Email + SMS, net of unsubscribes. ~<b>+93.9K</b> net new subscribers Jan–May (email +82.8K, SMS +11.1K); May was the biggest month. Line = cumulative.</p>
+      <div class="chartbox sm"><canvas id="cListGrowth"></canvas></div>
+    </div>
+    <div class="card">
+      <h4>Send volume — flows vs. campaigns / month</h4>
+      <p class="csub">Flows are only <b>~10%</b> of email send volume yet drive ~74% of revenue — that's the send-efficiency gap. Campaigns carry the volume.</p>
+      <div class="chartbox sm"><canvas id="cSendVol"></canvas></div>
+    </div>
   </div>
 
-  <!-- ============ TESTING ROADMAP ============ -->
-  <div class="panel" id="testing">
-    <section>
-      <div class="eyebrow">Testing Roadmap</div>
-      <h2 class="sec">Grouped by category.</h2>
-      <p class="lead">Four tests ran in 2026 and none reached significance, so measurement is the throughline. A <b>global holdout</b> tells us what lifecycle is worth over time and how that changes; <b>holdouts on every new campaign</b> read incremental lift rather than attributed revenue; and <b>existing-vs-new A/Bs</b> prove the rebuilds. Everything below is organized by the four ways we'll test.</p>
+  <h3 class="blk">Key takeaways</h3>
+  <div class="callout win"><div class="ico">✓</div><div><h5>Flows are the engine — and they're durable.</h5><p>Flows delivered <b>$790K (74%)</b> of program revenue while costing under 10% of send volume. Welcome (email Welcome Series + the separate SMS Welcome flow) together total <b>$560K — 52% of all program revenue.</b> This is recurring, low-cost, always-on revenue that scales with traffic and list growth, not with send effort.</p></div></div>
+  <div class="callout opp"><div class="ico">!</div><div><h5>Campaigns are an under-monetized lever.</h5><p>Campaigns carry <b>90% of sends but only 26% of revenue</b> at $0.04 per send. Industry campaigns average closer to ~$0.11 RPR. The bottleneck is click-through (email 0.53% vs. a 2–5% norm), not deliverability or opens — closing even part of that gap is a 6–7 figure opportunity.</p></div></div>
+  <div class="callout risk"><div class="ico">▲</div><div><h5>High opens, low clicks — the conversion gap.</h5><p>Email campaign open rate is <b>52%</b> (well above the ~38% norm) but only ~1% of opens turn into clicks. Subject lines are winning attention; creative, offers and CTAs aren't converting it. This is the program's biggest controllable upside.</p></div></div>
 
-      <div class="tablewrap">
-        <table class="ttable">
-          <thead>
-            <tr><th>Test</th><th>Area</th><th>What we're testing</th><th>Primary metric</th><th>Effort</th><th>Priority</th></tr>
-          </thead>
-          <tbody>
+  <div class="note-box">⚠︎ <b>Data notes:</b> Revenue attribution began Jan 2026 (2025 email/flow revenue is $0 by design, not a decline). June 2026 is excluded as a partial month. Open rates are Apple-MPP-inflated industry-wide, so clicks, orders and revenue-per-recipient are the more reliable signals. SMS has no open metric, so it shows "—" for opens. List growth is pulled live from Klaviyo and shown as <i>net new</i> subscribers (subscribes minus unsubscribes); absolute end-of-month list size needs a pre-Jan baseline and will be added once cohort/export data is in place. Purchaser time-to-purchase data is excluded — the workbook flags a known first-order-date bug.</div>
+</div></section>
 
-            <tr class="cat"><td colspan="6">Net new campaigns &amp; flows</td></tr>
-            <tr>
-              <td class="c-test">New post-purchase flow</td>
-              <td>Post-purchase</td>
-              <td>Does a full flow (fit check-in, care, replenishment, UGC) beat today's two-email, day-14 sequence.</td>
-              <td>Post-purchase RPR, second-order rate</td>
-              <td class="c-pri p2">Medium</td>
-              <td class="c-pri p1">P1</td>
-            </tr>
-            <tr>
-              <td class="c-test">Abandoned checkout SMS</td>
-              <td>Abandoned checkout</td>
-              <td>Does adding SMS, which the flow has none of today, recover checkouts email alone misses.</td>
-              <td>Recovery rate</td>
-              <td class="c-pri p1">Quick win</td>
-              <td class="c-pri p1">P1</td>
-            </tr>
-            <tr>
-              <td class="c-test">Second-purchase / rotation flow</td>
-              <td>Second purchase</td>
-              <td>A new flow triggered on order quantity plus elapsed time, framed as building a rotation.</td>
-              <td>Reorder rate</td>
-              <td class="c-pri p2">Medium</td>
-              <td class="c-pri p2">P2</td>
-            </tr>
+<!-- ===================== FLOWS ===================== -->
+<section class="panel" id="flows"><div class="wrap">
+  <h2 class="sec">Flow performance</h2>
+  <p class="lead">Eight revenue-generating flows, ranked and benchmarked. <b>Two flows carry both email and SMS messages — Abandoned Cart and Browse Abandonment — so their revenue is split by channel everywhere below.</b> Welcome (email) and SMS Welcome dominate; the abandonment flows are solid but trail industry on recovery value; transactional flows are high-engagement, zero-revenue real estate waiting to be monetized.</p>
 
-            <tr class="cat"><td colspan="6">Holdouts &amp; incrementality</td></tr>
-            <tr>
-              <td class="c-test">Global lifecycle holdout</td>
-              <td>Program-wide</td>
-              <td>A group held out of all lifecycle sends, so we can read lifecycle's total incremental impact and watch it change over time.</td>
-              <td>Incremental revenue vs. holdout</td>
-              <td class="c-pri p1">Quick win</td>
-              <td class="c-pri found">Always-on</td>
-            </tr>
-            <tr>
-              <td class="c-test">New-campaign holdouts</td>
-              <td>Every new campaign</td>
-              <td>Each new campaign launches with a holdout, so we measure incremental lift instead of attributed revenue.</td>
-              <td>Incremental lift</td>
-              <td class="c-pri p1">Quick win</td>
-              <td class="c-pri found">Standard</td>
-            </tr>
-            <tr>
-              <td class="c-test">Attribution validation</td>
-              <td>Welcome + abandonment</td>
-              <td>After the welcome flow filter ships, recheck the flow revenue split (30 days, 200+ triggers) before judging other flow changes.</td>
-              <td>Flow revenue split</td>
-              <td class="c-pri p1">Quick win</td>
-              <td class="c-pri p1">P1</td>
-            </tr>
-            <tr>
-              <td class="c-test">Existing vs. new (A/B)</td>
-              <td>Rebuilt flows &amp; templates</td>
-              <td>Test each rebuild against the current version, including slice-image emails vs. the EDS live-text build.</td>
-              <td>Conversion, revenue per recipient</td>
-              <td class="c-pri p2">Medium</td>
-              <td class="c-pri p1">P1</td>
-            </tr>
-
-            <tr class="cat"><td colspan="6">Updates to existing flows</td></tr>
-            <tr>
-              <td class="c-test">Non-price abandonment messaging</td>
-              <td>Abandoned cart / checkout</td>
-              <td>Add reviews, fit, and guarantees to a touch that only answers price today.</td>
-              <td>Cart-to-order conversion</td>
-              <td class="c-pri p1">Quick win</td>
-              <td class="c-pri p1">P1</td>
-            </tr>
-            <tr>
-              <td class="c-test">Welcome education &amp; value</td>
-              <td>Onboarding / welcome</td>
-              <td>Replace discount-led welcome content with collection education and brand value.</td>
-              <td>Welcome-to-first-order</td>
-              <td class="c-pri p2">Medium</td>
-              <td class="c-pri p1">P1</td>
-            </tr>
-            <tr>
-              <td class="c-test">Batch campaign segmentation</td>
-              <td>Campaigns</td>
-              <td>Segment blasts by color and purchase history instead of one-size-fits-all sends.</td>
-              <td>Revenue per send</td>
-              <td class="c-pri p2">Medium</td>
-              <td class="c-pri p2">P2</td>
-            </tr>
-
-            <tr class="cat"><td colspan="6">Messaging tests</td></tr>
-            <tr>
-              <td class="c-test">Reason-to-buy</td>
-              <td>Second purchase</td>
-              <td>"An outfit for the week" vs. "expand your colors" vs. "match your pieces."</td>
-              <td>Reorder rate</td>
-              <td class="c-pri p1">Quick win</td>
-              <td class="c-pri p2">P2</td>
-            </tr>
-            <tr>
-              <td class="c-test">Winback by segment</td>
-              <td>Winback</td>
-              <td>Lapsed one-time vs. former repeat buyers, messaged differently rather than one-size-fits-all.</td>
-              <td>Reactivation rate</td>
-              <td class="c-pri p2">Medium</td>
-              <td class="c-pri p2">P2</td>
-            </tr>
-            <tr>
-              <td class="c-test">Loyalty signup vs. flat discount</td>
-              <td>Acquisition</td>
-              <td>The offer for joining loyalty vs. a flat code in the popup. Runs once loyalty is live.</td>
-              <td>Signup-to-first-order</td>
-              <td class="c-pri p3">Large</td>
-              <td class="c-pri p2">P2</td>
-            </tr>
-            <tr>
-              <td class="c-test">Persona messaging</td>
-              <td>Cross-flow</td>
-              <td>Route by ad-derived persona: deal-seekers see offers, explorers see discovery.</td>
-              <td>Conversion by persona</td>
-              <td class="c-pri p3">Large</td>
-              <td class="c-pri p3">P3</td>
-            </tr>
-            <tr>
-              <td class="c-test">Cross-brand promotion</td>
-              <td>Onboarding / browse</td>
-              <td>Introduce Healing Hands to explorers Cherokee doesn't fit.</td>
-              <td>Cross-brand conversion</td>
-              <td class="c-pri p2">Medium</td>
-              <td class="c-pri p3">P3</td>
-            </tr>
-
-          </tbody>
-        </table>
-      </div>
-
-      <div class="note-box"><b>Feeds the dashboard:</b> the global holdout, new-campaign holdouts, and existing-vs-new results all report into the reporting dashboard, so incremental lift and lifecycle's impact over time stay visible, not just Klaviyo-attributed revenue.</div>
-    </section>
+  <div class="grid2">
+    <div class="card">
+      <h4>Flow revenue ranking, by channel</h4>
+      <p class="csub">Stacked email + SMS. Abandoned Cart &amp; Browse Abandonment show their SMS portion in purple.</p>
+      <div class="chartbox tall"><canvas id="cFlowRank"></canvas></div>
+    </div>
+    <div class="card">
+      <h4>Monthly revenue by top flow</h4>
+      <p class="csub">Flow revenue is steady and predictable month to month — the opposite of campaign spikiness.</p>
+      <div class="chartbox tall"><canvas id="cFlowTrend"></canvas></div>
+    </div>
   </div>
 
-  <!-- ============ EXECUTION PLAN ============ -->
-  <div class="panel" id="execution">
-    <section>
-      <div class="eyebrow">Execution Plan</div>
-      <h2 class="sec">What we're working on over time.</h2>
-      <p class="lead">The bars show when each initiative is in flight across the first twelve weeks, grouped into three phases. Planning for the bigger rebuilds starts in weeks 1-4 so nothing kicks off cold, and the big swings land once their dependencies are in place. Timeframes are a starting point to adjust against bandwidth and the loyalty launch date.</p>
+  <h3 class="blk">All revenue-generating flows</h3>
+  <p class="sm mut" style="margin:-4px 0 12px">Grouped by flow. Mixed-channel flows show an indented email/SMS split. RPR = revenue per recipient. Click rate shown combined; open rate (email-only, MPP-inflated) lives in the deep dives below.</p>
+  <div class="tbl-scroll"><table id="tFlows"><thead><tr>
+    <th>Flow</th><th>Channel(s)</th><th>Recipients</th><th>Click</th><th>Conv.</th><th>Orders</th><th>RPR</th><th>Revenue</th><th>% of flow rev</th>
+  </tr></thead><tbody></tbody></table></div>
 
-      <div class="gantt"><div class="gantt-inner">
+  <!-- WELCOME -->
+  <h3 class="blk">Deep dive — Welcome Series <span class="pill email">Email</span></h3>
+  <p class="sm mut" style="margin:-4px 0 14px">$418.7K · 53% of all flow revenue, entirely email. (The SMS welcome experience is the separate "SMS Welcome" flow — see below.) But this is really a one-email flow.</p>
+  <div class="grid2">
+    <div class="card">
+      <h4>Revenue per recipient by email</h4>
+      <p class="csub">Email 1 does virtually all the work; emails 2 &amp; 3 are dramatically weaker.</p>
+      <div class="chartbox sm"><canvas id="cWelcome"></canvas></div>
+    </div>
+    <div class="card">
+      <h4>Message-level detail</h4>
+      <div class="tbl-scroll" style="border:0;box-shadow:none"><table id="tWelcome"><thead><tr><th>Email</th><th>Sent</th><th>Open</th><th>Click</th><th>Conv.</th><th>RPR</th><th>Revenue</th></tr></thead><tbody></tbody></table></div>
+    </div>
+  </div>
+  <div class="callout opp" style="margin-top:14px"><div class="ico">!</div><div><h5>Welcome emails 2 &amp; 3 are leaking the opportunity.</h5><p>Email 1 converts at <b>4.0%</b> ($4.68 RPR) — well ahead of the ~2.3% welcome benchmark. Emails 2 and 3 collapse to <b>0.24% and 0.17%</b> conversion ($0.23 and $0.21 RPR) and earn just <b>7%</b> of the flow's revenue combined. The audience is engaged (35–36% opens) but the content/offer isn't compelling a second action. <b>Action:</b> rework 2 &amp; 3 with a fresh hook or incentive — even matching half of email 1's rate would add meaningful revenue.</p></div></div>
 
-        <div class="gantt-phase">
-          <div class="g-corner"></div>
-          <div class="g-phase p1" style="grid-column:2 / 6">Phase 1 · Foundations (0-30 days)</div>
-          <div class="g-phase p2" style="grid-column:6 / 10">Phase 2 · Core flows (30-60 days)</div>
-          <div class="g-phase p3" style="grid-column:10 / 14">Phase 3 · Big swings (60-90+ days)</div>
-        </div>
+  <!-- ABANDONED CART -->
+  <h3 class="blk">Deep dive — Abandoned Cart <span class="pill email">Email</span><span class="pill sms">SMS</span></h3>
+  <p class="sm mut" style="margin:-4px 0 14px">$93.1K combined — <b>email $78.1K (84%) + SMS $15.0K (16%)</b>. The biggest benchmark gap in the program. Note the channel split below: SMS converts <i>better</i> per recipient than email here.</p>
+  <div class="grid3" style="margin-bottom:14px">
+    <div class="kpi"><div class="lab">Email <span class="pill email">E</span></div><div class="val" style="font-size:21px">$0.82 <span style="font-size:12px;color:var(--mut);font-weight:600">RPR</span></div><div class="note">0.78% conv · 94,816 recipients · $78.1K</div></div>
+    <div class="kpi"><div class="lab">SMS <span class="pill sms">S</span></div><div class="val" style="font-size:21px">$1.34 <span style="font-size:12px;color:var(--mut);font-weight:600">RPR</span></div><div class="note">1.61% conv · 11,134 recipients · $15.0K</div></div>
+    <div class="kpi"><div class="lab">Combined</div><div class="val" style="font-size:21px">$0.88 <span style="font-size:12px;color:var(--mut);font-weight:600">RPR</span></div><div class="note">0.87% conv · 105,950 recipients · $93.1K</div></div>
+  </div>
+  <div class="grid2">
+    <div class="card">
+      <h4>RPR by message — recovery is under-monetized</h4>
+      <p class="csub">"Repeat" customers and the tested "Copy of" variants outperform the originals; SMS messages (purple) punch above email.</p>
+      <div class="chartbox tall"><canvas id="cAC"></canvas></div>
+    </div>
+    <div class="card">
+      <h4>Message-level detail (email + SMS)</h4>
+      <div class="tbl-scroll" style="border:0;box-shadow:none;max-height:380px;overflow:auto"><table id="tAC"><thead><tr><th>Message</th><th>Sent</th><th>Click</th><th>Conv.</th><th>RPR</th><th>Revenue</th></tr></thead><tbody></tbody></table></div>
+    </div>
+  </div>
+  <div class="callout risk" style="margin-top:14px"><div class="ico">▲</div><div><h5>Abandoned Cart email earns $0.82/recipient vs. a $3.00–3.65 industry norm.</h5><p>Email conversion is <b>0.78%</b> vs. a ~2.7–3.3% benchmark. The separate <b>"Cherokee | Abandoned Checkout"</b> email flow earns <b>$1.71 RPR (2×)</b> and its first email converts at 2.4% — so the brand can clearly do better; the main cart flow is the laggard. <b>Action:</b> audit timing (first touch within ~30–60 min), strengthen message 1, and consider folding the winning Cherokee structure into the main cart flow.</p></div></div>
+  <div class="callout win"><div class="ico">✓</div><div><h5>SMS recovery out-converts email — lean into it.</h5><p>Abandoned Cart <b>SMS RPR is $1.34 vs. email's $0.82</b> (and SMS first-touch click rate is ~11%). On top of that, the "Repeat"-customer messages and tested "Copy of" variants win big — "Copy of AbandonedCart_1 (Repeat)" hits <b>$2.53 RPR / 2.24% conversion.</b> <b>Action:</b> expand the SMS leg of the cart flow, promote winning variants to default, and segment harder on repeat customers.</p></div></div>
 
-        <div class="gantt-weeks">
-          <div class="g-corner"></div>
-          <div class="wk">W1</div><div class="wk">W2</div><div class="wk">W3</div><div class="wk">W4</div>
-          <div class="wk">W5</div><div class="wk">W6</div><div class="wk">W7</div><div class="wk">W8</div>
-          <div class="wk">W9</div><div class="wk">W10</div><div class="wk">W11</div><div class="wk">W12</div>
-        </div>
+  <!-- SECONDARY FLOWS -->
+  <h3 class="blk">Other flows worth the team's attention</h3>
+  <div class="grid3">
+    <div class="callout win" style="margin-bottom:0"><div class="ico">✓</div><div><h5>SMS Welcome is a star <span class="pill sms">SMS</span></h5><p>$141K · <b>$4.18 RPR</b>, 18.2% click. The "15% Off" first text converts at <b>6.1%</b> ($6.78 RPR) — above the 14.7% SMS-welcome CTR benchmark. Grow SMS list capture to scale this.</p></div></div>
+    <div class="callout win" style="margin-bottom:0"><div class="ico">✓</div><div><h5>Cherokee Checkout is the in-house template <span class="pill email">Email</span></h5><p>The Cherokee | Abandoned Checkout flow earns <b>$1.71 RPR</b> at <b>1.6% conversion</b> — 2× the main Abandoned Cart email flow. Its message-1 ("Your Order Is Waiting") converts at 2.4%. Use it as the blueprint to rebuild the main cart flow.</p></div></div>
+    <div class="callout opp" style="margin-bottom:0"><div class="ico">!</div><div><h5>Back In Stock is tiny but mighty <span class="pill email">Email</span></h5><p>Only 673 sends but <b>$6.61 RPR</b> and 4.6% conversion — the highest-intent flow there is. Drive more "notify me" sign-ups on out-of-stock PDPs to feed it.</p></div></div>
+    <div class="callout risk" style="margin-bottom:0"><div class="ico">▲</div><div><h5>Winback needs a rebuild <span class="pill email">Email</span></h5><p>$1.6K total, <b>$0.06 RPR</b>, 0.06% conversion. Both messages barely move. Rebuild it with a real incentive and tighter lapsed-window logic — there's a re-engagement audience here that the current flow isn't reaching.</p></div></div>
+    <div class="callout opp" style="margin-bottom:0"><div class="ico">!</div><div><h5>Browse Abandonment: volume-rich, value-thin <span class="pill email">Email</span><span class="pill sms">SMS</span></h5><p>224K sends (email $53K + SMS $4.6K) but ~$0.26 RPR. Lower intent than cart by nature, but the gap suggests room — tighten to higher-intent browsers (repeat visits, category dwell).</p></div></div>
+    <div class="callout opp" style="margin-bottom:0"><div class="ico">!</div><div><h5>Post Purchase is the LTV lever <span class="pill email">Email</span></h5><p>$13.7K at $0.22 RPR today, with strong opens (41–43%) on buyers. The big opportunity: when someone buys a single piece that has a matching set, promote the coordinating item. Recommending the relevant match is a direct path to higher repeat purchase and lifetime value.</p></div></div>
+  </div>
+</div></section>
 
-        <div class="gantt-row"><div class="g-label">Testing framework</div><div class="g-bar found" style="grid-column:2 / 6">Stand up</div></div>
-        <div class="gantt-row"><div class="g-label">Welcome flow filter fix</div><div class="g-bar qw" style="grid-column:2 / 4">Fix</div></div>
-        <div class="gantt-row"><div class="g-label">SMS on abandoned checkout</div><div class="g-bar qw" style="grid-column:2 / 4">Add</div></div>
-        <div class="gantt-row"><div class="g-label">New post-purchase flow</div><div class="g-bar qw" style="grid-column:2 / 5">Build</div></div>
-        <div class="gantt-row"><div class="g-label">Occupation capture at signup</div><div class="g-bar qw" style="grid-column:3 / 5">Ship</div></div>
-        <div class="gantt-row"><div class="g-label">Abandonment email module test (UGC / reviews / fit copy)</div><div class="g-bar qw" style="grid-column:3 / 6">Module swap on EDS</div></div>
-        <div class="gantt-row"><div class="g-label">Onboarding revamp</div><div class="g-bar found" style="grid-column:2 / 6">Plan</div><div class="g-bar qw" style="grid-column:6 / 10">Rebuild + test</div></div>
-        <div class="gantt-row"><div class="g-label">Second-purchase flow rebuild</div><div class="g-bar found" style="grid-column:2 / 6">Plan</div><div class="g-bar qw" style="grid-column:7 / 11">Rebuild + test</div></div>
-        <div class="gantt-row"><div class="g-label">Abandoned-flow testing (full program)</div><div class="g-bar qw" style="grid-column:6 / 11">Test program</div></div>
-        <div class="gantt-row"><div class="g-label">Winback reframe</div><div class="g-bar found" style="grid-column:2 / 6">Plan</div><div class="g-bar qw" style="grid-column:8 / 11">Rebuild + test</div></div>
-        <div class="gantt-row"><div class="g-label">Persona personalization</div><div class="g-bar swing" style="grid-column:6 / 10">Manual pilot</div><div class="g-bar swing" style="grid-column:10 / 14">MVP + test</div></div>
-        <div class="gantt-row"><div class="g-label">Loyalty program launch</div><div class="g-bar swing" style="grid-column:9 / 14">Launch + embed</div></div>
-        <div class="gantt-row"><div class="g-label">Refer-a-friend + UGC capture</div><div class="g-bar swing" style="grid-column:11 / 14">Build</div></div>
+<!-- ===================== CAMPAIGNS ===================== -->
+<section class="panel" id="campaigns"><div class="wrap">
+  <h2 class="sec">Campaign performance — by category &amp; channel</h2>
+  <p class="lead">139 campaigns across 12 content themes. Promotions (Sale) and seasonal moments (Nurses Week, Doctors Day) drive the revenue; brand/awareness themes (Apparel, Product Highlight, Reviews) generate opens but convert weakly. Email and SMS are reported separately — SMS is ~9% of campaign sends but the most efficient per send.</p>
 
-      </div></div>
+  <div class="kpis" id="campKpis"></div>
 
-      <div class="gantt-legend">
-        <span class="lg found">Foundation &amp; planning</span>
-        <span class="lg qw">Flow builds &amp; tests</span>
-        <span class="lg swing">Big swings</span>
-      </div>
-
-      <div class="note-box"><b>Dependencies to watch:</b> the loyalty launch gates the loyalty mentions in welcome, second-purchase, and post-purchase, plus the donate-points test. Occupation capture has to ship before profession-based personalization and the "profession" segment go live. The testing framework underpins every test in the roadmap, which is why it sits in week one. <b>Where the big swings ride along with earlier work:</b> occupation capture feeds both loyalty tiers and persona routing, the onboarding revamp is where loyalty-led welcome content lands once the program is live, and the manual persona pilot reuses the welcome and abandonment messaging tests rather than needing net-new builds.</div>
-    </section>
+  <div class="grid2" style="margin-top:16px">
+    <div class="card">
+      <h4>Email campaign revenue by content theme</h4>
+      <p class="csub">Nurses Week and Sale dominate — together ~53% of email campaign revenue.</p>
+      <div class="chartbox tall"><canvas id="cCatRev"></canvas></div>
+    </div>
+    <div class="card">
+      <h4>Efficiency by theme (email revenue per send)</h4>
+      <p class="csub">Promotional &amp; transactional themes convert; awareness themes don't. Green = above email campaign average.</p>
+      <div class="chartbox tall"><canvas id="cCatRps"></canvas></div>
+    </div>
   </div>
 
-</div></main>
+  <h3 class="blk">Email campaign categories</h3>
+  <div class="tbl-scroll"><table id="tCatEmail"><thead><tr>
+    <th>Content theme</th><th>Campaigns</th><th>Delivered</th><th>Open</th><th>Click</th><th>Conv.</th><th>Orders</th><th>RPR</th><th>AOV</th><th>Revenue</th>
+  </tr></thead><tbody></tbody></table></div>
 
-<footer><div class="wrap">Cherokee lifecycle strategy · Prepared by Verbose Marketing for Careismatic</div></footer>
+  <h3 class="blk">SMS campaign categories <span class="pill sms">SMS</span></h3>
+  <p class="sm mut" style="margin:-4px 0 12px">SMS has no open metric. It earns more per send than email and clicks ~5–6× harder.</p>
+  <div class="tbl-scroll"><table id="tCatSms"><thead><tr>
+    <th>Content theme</th><th>Campaigns</th><th>Delivered</th><th>Click</th><th>Conv.</th><th>Orders</th><th>RPR</th><th>AOV</th><th>Revenue</th>
+  </tr></thead><tbody></tbody></table></div>
 
+  <!-- NURSES WEEK -->
+  <h3 class="blk">Spotlight — Nurses Week</h3>
+  <p class="sm mut" style="margin:-4px 0 14px">The brand's biggest moment: 36 campaigns (26 email + 10 SMS) concentrated in May 2026, driving ~$80.2K and powering the record month.</p>
+  <div class="grid3">
+    <div class="kpi"><div class="lab">Nurses Week revenue</div><div class="val">$80.2K</div><div class="note">29% of all campaign revenue, in one month</div></div>
+    <div class="kpi"><div class="lab">Email RPR</div><div class="val">$0.051</div><div class="note">vs. $0.037 email campaign avg — above</div></div>
+    <div class="kpi"><div class="lab">SMS RPR</div><div class="val">$0.111</div><div class="note">best SMS RPR of any theme</div></div>
+  </div>
+  <div class="callout win" style="margin-top:14px"><div class="ico">✓</div><div><h5>Nurses Week works — and SMS is the sharper tool for it.</h5><p>Email Nurses Week converted at <b>0.042%</b> (above the email campaign average) and the single best campaign of the period was a Nurses Week email (<b>$10.4K, 0.107 RPR</b>). On SMS, Nurses Week hit <b>$0.111 RPR and 0.105% conversion</b> — the highest of any SMS theme. <b>Takeaway:</b> the seasonal, identity-driven hook resonates with this nurse/clinician audience. Lean into SMS for time-boxed Nurses Week moments and plan the calendar around it (it's a bigger spike than any sale).</p></div></div>
 
-<script id="tabs-script">
-(function(){
-  var tabs = document.querySelectorAll('nav.tabs .tab');
-  var panels = document.querySelectorAll('.panel');
-  tabs.forEach(function(btn){
-    btn.addEventListener('click', function(){
-      tabs.forEach(function(b){ b.classList.remove('active'); });
-      panels.forEach(function(p){ p.classList.remove('active'); });
-      btn.classList.add('active');
-      var t = document.getElementById(btn.getAttribute('data-tab'));
-      if(t){ t.classList.add('active'); }
-      window.scrollTo({top:0,behavior:'smooth'});
-    });
+  <!-- CHANNEL + TIMING -->
+  <h3 class="blk">Email vs. SMS &amp; send timing</h3>
+  <div class="grid2">
+    <div class="card">
+      <h4>Channel efficiency (campaigns)</h4>
+      <p class="csub">SMS delivers higher revenue-per-send and click rate; email wins on absolute scale. (Log scale.)</p>
+      <div class="chartbox sm"><canvas id="cChannel"></canvas></div>
+    </div>
+    <div class="card">
+      <h4>Email revenue per send by send day</h4>
+      <p class="csub">Friday &amp; Monday over-index on efficiency; Saturday (highest volume) is the least efficient day.</p>
+      <div class="chartbox sm"><canvas id="cWeekday"></canvas></div>
+    </div>
+  </div>
+  <div class="callout opp" style="margin-top:14px"><div class="ico">!</div><div><h5>The conversion gap is concentrated in awareness themes.</h5><p>"New," "Apparel," "Product Highlight" and "Reviews" generate strong opens (54–55%) but the weakest RPR ($0.02–0.03) and conversion (~0.02%). They acquire attention but don't drive purchase. <b>Action:</b> add a clearer offer/CTA or product-led shopping modules, or rebalance the calendar toward promotional and seasonal themes that convert. Also test shifting volume off low-efficiency Saturday sends.</p></div></div>
+  <div class="callout opp" style="margin-bottom:0"><div class="ico">!</div><div><h5>SMS is under-used given its efficiency.</h5><p>SMS campaigns earn <b>$0.055/send</b> vs. email's $0.037 and click at <b>3.0%</b> vs. 0.53%. SMS is only ~9% of campaign sends. Growing the subscribed SMS list and adding SMS to more promotional moments is a high-ROI lever — and program-wide SMS already drives ~$197K (18%) once flows are included.</p></div></div>
+</div></section>
+
+<!-- ===================== A/B TESTS ===================== -->
+<section class="panel" id="abtests"><div class="wrap">
+  <h2 class="sec">A/B tests — 2026</h2>
+  <p class="lead">Pulled live from Klaviyo for this year. <b>Four A/B tests were active in 2026</b> — one email campaign send-time test and three inside the Browse Abandonment flow (image-vs-text creative on email, and SMS-vs-MMS). The headline: <b>testing volume is very low and not one test reached statistical significance.</b> Every result below is <i>directional at best</i> — order counts per variation are tiny (8–36), so treat "winners" as hypotheses to re-test, not settled conclusions.</p>
+
+  <div class="kpis" id="abKpis"></div>
+
+  <h3 class="blk">What we learned</h3>
+  <p class="sm mut" style="margin:-4px 0 14px">The plain-language takeaway from each experiment. Across the board, the answer this year is the same: no reliable difference yet.</p>
+  <div class="tbl-scroll"><table id="tLearned"><thead><tr><th>Experiment</th><th>What we changed</th><th>What we learned</th><th>Verdict</th></tr></thead><tbody></tbody></table></div>
+
+  <h3 class="blk">Test-by-test detail</h3>
+  <p class="sm mut" style="margin:-4px 0 14px">Both variations shown neutrally — nothing is marked a winner because no test cleared statistical significance. Observed numbers are included for transparency, but a difference that isn't significant could simply be chance.</p>
+  <div id="abTests"></div>
+
+  <h3 class="blk">What the tests tell us</h3>
+  <div class="callout risk"><div class="ico">▲</div><div><h5>Nothing is statistically significant — the tests are underpowered.</h5><p>All four tests have p-values of 0.75–1.0 on conversion, with only <b>8–36 orders per variation.</b> At that volume you can't reliably separate a real winner from chance. The revenue-per-recipient gaps (even the eye-catching +51%) are driven by a handful of differently-sized orders, not a true conversion difference.</p></div></div>
+  <div class="callout risk"><div class="ico">▲</div><div><h5>The "winner" flips depending on the metric.</h5><p>In three of four tests, the variation that won on revenue-per-recipient <b>lost on conversion rate</b> (and vice versa). Example: the live Browse Abandonment creative test shows the image headline up +51% on RPR, but the text headline actually converted slightly <i>more</i> people. Pick one primary metric before a test starts.</p></div></div>
+  <div class="callout opp"><div class="ico">!</div><div><h5>Build a real testing cadence.</h5><p>Only one genuinely new test launched in 2026 (the January send-time test, which tied). The flow experiments date back to April 2025 and are still running. <b>Run fewer, bigger, longer tests</b> — set a primary metric, a minimum sample/order threshold, and let Klaviyo's built-in significance call the winner before you ship it.</p></div></div>
+  <div class="callout opp"><div class="ico">!</div><div><h5>Clean up the duplicate Browse Abandonment test.</h5><p>The same image-vs-text experiment is running under both a live message and a leftover "Copy of" draft — and they report opposite directional winners. Consolidate to a single live version so the data isn't split and contradictory.</p></div></div>
+
+  <div class="note-box">⚠︎ <b>Data notes:</b> Pulled live from Klaviyo (Cherokee Uniforms), <i>this year</i> timeframe, conversion metric = SFCC&nbsp;Placed&nbsp;Order. Significance is a two-proportion z-test on conversions (orders ÷ recipients). The three flow experiments launched in 2025 and are still live, so the figures shown are their 2026 performance. SMS has no open metric. No customer data or PII is included.</div>
+</div></section>
+
+<!-- ===================== BENCHMARKS ===================== -->
+<section class="panel" id="bench"><div class="wrap">
+  <h2 class="sec">How Cherokee stacks up to the industry</h2>
+  <p class="lead">Compared against current Klaviyo / ecommerce benchmarks (2025–2026). Green = ahead of benchmark, amber = roughly in line, red = behind. The pattern is consistent: <b>attention metrics (opens) beat the industry; conversion metrics (clicks, RPR) trail it</b> — especially on campaigns and the abandoned-cart email leg.</p>
+
+  <div class="grid2">
+    <div class="card">
+      <h4>Flows: how far above / below benchmark?</h4>
+      <p class="csub">Revenue-per-recipient gap vs. industry, by journey &amp; channel. Bars to the right (green) beat benchmark; left (red) trail it. Only SMS Welcome clears the bar; cart &amp; browse recovery are the gaps.</p>
+      <div class="chartbox"><canvas id="cBenchFlow"></canvas></div>
+    </div>
+    <div class="card">
+      <h4>Email campaigns vs. benchmark (index, benchmark = 100)</h4>
+      <p class="csub">Opens far ahead; clicks and RPR behind. Dashed line = industry par.</p>
+      <div class="chartbox"><canvas id="cBenchCamp"></canvas></div>
+    </div>
+  </div>
+
+  <h3 class="blk">Benchmark scorecard</h3>
+  <div class="tbl-scroll"><table id="tBench"><thead><tr>
+    <th>Metric</th><th>Cherokee</th><th>Industry benchmark</th><th>Verdict</th><th>Read</th>
+  </tr></thead><tbody></tbody></table></div>
+
+  <div class="note-box" style="margin-top:18px">Benchmark sources: Klaviyo 2026 Email Marketing Benchmarks &amp; 2025 AMER Benchmark Report; Klaviyo Abandoned Cart Benchmark Report; Omnisend welcome-flow benchmarks; SMS benchmark studies (mobile-text-alerts, MessageFlow). Flows-vs-campaigns reference: Klaviyo (flows ≈ 41% of email revenue from ~5.3% of sends; ~18× campaign RPR). Open-rate comparisons are affected by Apple Mail Privacy Protection inflation industry-wide.</div>
+</div></section>
+
+<!-- ===================== COHORTS ===================== -->
+<section class="panel" id="cohorts"><div class="wrap">
+  <h2 class="sec">Lead &amp; purchase cohorts</h2>
+  <p class="lead"><b>Lead cohorts</b> group people by the month they first joined an email/SMS list and track how many go on to a first order. <b>Purchase cohorts</b> group people by their first order and track repeat value over time. Together they answer: as paid scales with New Engen, is each new monthly intake converting <i>better or worse</i>, and what is a customer worth over time? <b>Focus is Jan 2026 forward</b> (marked ●); 2025 cohorts are kept only as a maturity benchmark, since they're old enough to show the full-year curve.</p>
+
+  <div class="kpis" id="cohKpis"></div>
+
+  <h3 class="blk">Lead cohorts — do new subscribers convert to a first order?</h3>
+  <div class="card" style="margin-top:4px">
+    <h4>Lead → first-order conversion, by monthly subscribe cohort</h4>
+    <p class="csub">Each cell = % of that month's new subscribers who placed an order N months later. Darker = higher. ● marks the Jan 2026+ cohorts (the focus); 2025 rows are the maturity benchmark. Source: Klaviyo cohort analysis (First Subscribed to List → Placed Order).</p>
+    <div class="heatwrap" id="leadHeat"></div>
+    <div class="heatkey"><span>Lower conversion</span><span class="bar"></span><span>Higher</span></div>
+  </div>
+  <div class="grid2" style="margin-top:16px">
+    <div class="card"><h4>Lead quality over time — month-0 conversion</h4><p class="csub">Share of each cohort that buys in its first month — the fast, leading signal of lead quality. <span style="color:var(--red);font-weight:700">Red</span> = Dec 2025 anomaly; <span style="color:var(--navy);font-weight:700">navy</span> = May 2026 peak.</p><div class="chartbox"><canvas id="cLeadM0"></canvas></div></div>
+    <div class="card"><h4>How conversion accumulates with cohort age</h4><p class="csub">Cumulative lead→order rate by months since subscribe. The curves flatten fast — most of a cohort's value lands in month 0. Dashed = 2025 (mature), solid = 2026.</p><div class="chartbox"><canvas id="cLeadCurve"></canvas></div></div>
+  </div>
+
+  <h3 class="blk">Purchase cohorts — how much is a customer worth over time?</h3>
+  <div class="card" style="margin-top:4px">
+    <h4>Repeat revenue per buyer, by first-order cohort</h4>
+    <p class="csub">First-order AOV (grey), then average repeat revenue per buyer in each following month (blue). ● marks Jan 2026+ cohorts. Source: Klaviyo cohort analysis (First Order Confirmation → Order Confirmation, avg conversion value).</p>
+    <div class="heatwrap" id="purchHeat"></div>
+    <div class="heatkey"><span>Lower repeat $</span><span class="bar"></span><span>Higher</span></div>
+  </div>
+  <div class="grid2" style="margin-top:16px">
+    <div class="card"><h4>Cumulative value per customer</h4><p class="csub">First order plus repeat orders, averaged per buyer, by cohort age. Mature cohorts add roughly a third to a half on top of the first order. Dashed = 2025, solid = 2026.</p><div class="chartbox"><canvas id="cPurchLTV"></canvas></div></div>
+    <div class="card"><h4>First-order value by cohort</h4><p class="csub">Average first-order AOV for each monthly buyer cohort — stable around $105–122.</p><div class="chartbox"><canvas id="cPurchAOV"></canvas></div></div>
+  </div>
+
+  <h3 class="blk">What the cohorts tell us</h3>
+  <div class="callout win"><div class="ico">✓</div><div><h5>2026 lead quality is trending up, not diluting.</h5><p>Month-0 lead→order conversion climbed steadily through 2026 — <b>Jan 19.0% → Feb 19.5% → Mar 20.7% → Apr 22.2% → May 26.7%</b>, the best of any cohort on record. As the New Engen paid program ramps and intake grows, newer cohorts are converting <i>faster</i>, not worse — an encouraging early read on acquisition quality and CAC efficiency.</p></div></div>
+  <div class="callout risk"><div class="ico">⚠︎</div><div><h5>Dec 2025 is the cautionary cohort.</h5><p>Only <b>9.3%</b> of December subscribers placed a first order in month 0 — less than half the ~20% norm — and the cohort never caught up (~15% cumulative through 6 months vs. ~28–32% for Jun/Jul). That's the signature of a holiday/promo-driven influx of low-intent, deal-seeking subscribers. <b>As paid scales, watch month-0 conversion by source/cohort as the early-warning metric</b> — volume isn't the same as quality.</p></div></div>
+  <div class="callout"><div class="ico">▲</div><div><h5>Lead value is decided fast — judge cohorts in weeks, not quarters.</h5><p>Across every cohort, the bulk of first-year purchase activity happens in <b>month 0</b>; by month 1 the rate falls to ~2–4%, and from month 3 on it's a thin ~0.6–1%/month tail. That's the answer to "why higher in month 1 than month 3" — the curve front-loads hard. Practically: a cohort's month-0 conversion all but tells you where it will land, so you can read a new paid source's quality within ~30 days rather than waiting a quarter.</p></div></div>
+  <div class="callout"><div class="ico">▲</div><div><h5>Repeat orders add a third to half of customer value.</h5><p>First orders average <b>~$109</b>; mature 2025 buyer cohorts go on to spend another <b>33–43%</b> over the following year (Jun '25 buyers: $122 first order → ~$175 cumulative per buyer). The 2026 cohorts are tracking the same early shape. This is the LTV side of the CAC:LTV ratio New Engen needs to underwrite paid spend.</p></div></div>
+  <div class="callout opp"><div class="ico">!</div><div><h5>Post Purchase is the lever on the repeat tail.</h5><p>Repeat revenue is heavily front-loaded into months 0–1, then thins out. The clearest unlock is the matching-set / coordinating-item push in the <b>Post Purchase flow</b> (see Flows tab) — turning one-item buyers into repeat buyers is what bends the purchase-cohort curve upward and compounds the cumulative-value lines above.</p></div></div>
+
+  <div class="note-box" style="margin-top:18px"><b>How to read these — source &amp; method.</b> Cohorts come from Klaviyo's Cohort Analysis (Cherokee Uniforms). <b>Leads</b> = "First Subscribed to a List" (closest available proxy to a lead — there is no lead-form event yet); <b>purchasers</b> = "First Order Confirmation." Lead cells show the % of the cohort placing an order in that month (Profiles measurement); a buyer can appear in more than one month, so month 0 ≈ first purchase and cumulative figures sum the monthly rates. Purchase cells show average conversion value per buyer that month. Cohort sizes reconcile with the live list-growth figures already in this dashboard (Jan–Apr match within ~3%). This cohort view isn't yet exposed by the Klaviyo API, so the figures are transcribed from the report (not auto-refreshing). Aggregated only — no customer-level data or PII.</div>
+</div></section>
+
+<!-- ===================== ACTIONS ===================== -->
+<section class="panel" id="actions"><div class="wrap">
+  <h2 class="sec">Prioritized action plan</h2>
+  <p class="lead">Ranked by estimated revenue impact vs. effort. The two biggest levers — fixing the conversion gap on campaigns and closing the abandoned-cart benchmark gap — are also the most controllable.</p>
+
+  <div class="tbl-scroll"><table id="tActions"><thead><tr><th>#</th><th>Action</th><th>Owner area</th><th>Impact</th><th>Effort</th></tr></thead><tbody></tbody></table></div>
+
+  <h3 class="blk">The 90-day shortlist</h3>
+  <div class="callout risk"><div class="ico">1</div><div><h5>Fix the Abandoned Cart flow to industry RPR.</h5><p>Closing the email leg from $0.82 toward $1.71 (what the Cherokee flow already achieves) is a direct 6-figure annualized lift. Audit send timing, rewrite message 1, promote winning "Copy of"/"Repeat" variants, and expand the higher-converting SMS leg.</p></div></div>
+  <div class="callout opp"><div class="ico">2</div><div><h5>Build out Post Purchase to grow LTV.</h5><p>When a customer buys a single piece that belongs to a matching set, follow up by recommending the coordinating item. It turns a one-item buyer into a repeat purchaser and lifts lifetime value — on an audience that already opens at 41–43%.</p></div></div>
+  <div class="callout opp"><div class="ico">3</div><div><h5>Rebuild Welcome emails 2 &amp; 3.</h5><p>Email 1 converts at 4.0% but emails 2 &amp; 3 collapse to 0.2% and together earn only 7% of a $419K flow. Give them a real reason to click — a fresh hook, a category nudge, or a soft incentive.</p></div></div>
+  <div class="callout win"><div class="ico">4</div><div><h5>Scale what already wins: SMS &amp; seasonal.</h5><p>Grow SMS list capture (SMS RPR &gt; email in welcome, cart and most campaign themes) and build the campaign calendar around Nurses-Week-style identity moments, which out-earn standard sales.</p></div></div>
+</div></section>
+
+<footer><div class="wrap">
+  Built from <b>Cherokee Klaviyo data</b> (Monthly Recap, Campaign Data, Flow Data). Period Jan–May 2026; June excluded as partial; revenue attribution began Jan 2026. Email/SMS are split throughout, including SMS messages inside the Abandoned Cart and Browse Abandonment flows. Figures reconcile to the workbook's Monthly Recap totals ($790,198 flow + $279,938 campaign = $1,070,136). Customer-level purchaser data was aggregated only — no personal information is included. Benchmarks via Klaviyo, Omnisend and published SMS benchmark studies (2025–2026).
+</div></footer>
+
+<script>
+const DATA = {"months": ["Jan", "Feb", "Mar", "Apr", "May"], "campaign_rev": [57894.17, 32091.96, 50792.48, 40380.88, 98778.11], "flow_rev": [172689.27, 131566.39, 156079.15, 151171.09, 178692.53], "campaign_sends": [1327636, 1313061, 1336007, 1204442, 2096685], "flow_sends": [160836, 128493, 163261, 155102, 178243], "total_rev": [230583.44, 163658.35, 206871.63, 191551.97, 277470.64], "total_sends": [1488472, 1441554, 1499268, 1359544, 2274928], "summary": {"program_rev": 1070136.03, "flow_rev": 790198.43, "camp_rev": 279937.6, "flow_rev_share": 73.8, "camp_rev_share": 26.2, "flow_send_share": 9.7, "camp_send_share": 90.3, "flow_rps": 1.005, "camp_rps": 0.038, "rps_ratio": 26.1, "total_sends": 8063766, "avg_monthly_rev": 214027.0, "may_rev": 277470.64, "may_mom": 44.9}, "camp_email": {"deliveries": 6632636, "opens": 3472739, "clicks": 35076, "unsubs": 17157, "orders": 1932, "rev": 244127.89, "open_rate": 52.4, "click_rate": 0.53, "cvr": 0.029, "rps": 0.037, "aov": 126.36}, "camp_sms": {"deliveries": 655469, "opens": 0, "clicks": 19539, "unsubs": 3722, "orders": 318, "rev": 35809.71, "open_rate": null, "click_rate": 2.98, "cvr": 0.049, "rps": 0.055, "aov": 112.61}, "camp_categories_email": [{"deliveries": 1406011, "opens": 633072, "clicks": 7189, "unsubs": 2199, "orders": 588, "rev": 71494.23, "open_rate": 45.0, "click_rate": 0.51, "cvr": 0.042, "rps": 0.051, "aov": 121.59, "name": "Nurses Week", "campaigns": 26}, {"deliveries": 952922, "opens": 513897, "clicks": 7356, "unsubs": 2413, "orders": 462, "rev": 58258.33, "open_rate": 53.9, "click_rate": 0.77, "cvr": 0.048, "rps": 0.061, "aov": 126.1, "name": "Sale", "campaigns": 11}, {"deliveries": 990018, "opens": 536708, "clicks": 5501, "unsubs": 2645, "orders": 216, "rev": 28894.73, "open_rate": 54.2, "click_rate": 0.56, "cvr": 0.022, "rps": 0.029, "aov": 133.77, "name": "New", "campaigns": 10}, {"deliveries": 999546, "opens": 548540, "clicks": 4879, "unsubs": 3110, "orders": 198, "rev": 26611.34, "open_rate": 54.9, "click_rate": 0.49, "cvr": 0.02, "rps": 0.027, "aov": 134.4, "name": "Apparel", "campaigns": 11}, {"deliveries": 798953, "opens": 437198, "clicks": 3843, "unsubs": 2357, "orders": 168, "rev": 22977.87, "open_rate": 54.7, "click_rate": 0.48, "cvr": 0.021, "rps": 0.029, "aov": 136.77, "name": "Product Highlight", "campaigns": 8}, {"deliveries": 507278, "opens": 277719, "clicks": 2161, "unsubs": 1316, "orders": 95, "rev": 11391.54, "open_rate": 54.7, "click_rate": 0.43, "cvr": 0.019, "rps": 0.022, "aov": 119.91, "name": "Reviews", "campaigns": 5}, {"deliveries": 289228, "opens": 156561, "clicks": 922, "unsubs": 773, "orders": 61, "rev": 6567.93, "open_rate": 54.1, "click_rate": 0.32, "cvr": 0.021, "rps": 0.023, "aov": 107.67, "name": "Best Sellers", "campaigns": 3}, {"deliveries": 274441, "opens": 151104, "clicks": 1283, "unsubs": 920, "orders": 53, "rev": 6235.17, "open_rate": 55.1, "click_rate": 0.47, "cvr": 0.019, "rps": 0.023, "aov": 117.64, "name": "Collection Highlight", "campaigns": 4}, {"deliveries": 267119, "opens": 139859, "clicks": 1142, "unsubs": 700, "orders": 34, "rev": 3868.36, "open_rate": 52.4, "click_rate": 0.43, "cvr": 0.013, "rps": 0.014, "aov": 113.78, "name": "Seasonal", "campaigns": 5}, {"deliveries": 101455, "opens": 55056, "clicks": 385, "unsubs": 236, "orders": 20, "rev": 3726.88, "open_rate": 54.3, "click_rate": 0.38, "cvr": 0.02, "rps": 0.037, "aov": 186.34, "name": "Doctors Day", "campaigns": 1}, {"deliveries": 37618, "opens": 20889, "clicks": 343, "unsubs": 466, "orders": 32, "rev": 3572.43, "open_rate": 55.5, "click_rate": 0.91, "cvr": 0.085, "rps": 0.095, "aov": 111.64, "name": "Transactional", "campaigns": 3}, {"deliveries": 8047, "opens": 2136, "clicks": 72, "unsubs": 22, "orders": 5, "rev": 529.08, "open_rate": 26.5, "click_rate": 0.89, "cvr": 0.062, "rps": 0.066, "aov": 105.82, "name": "Survey", "campaigns": 8}], "camp_categories_sms": [{"deliveries": 114892, "opens": 0, "clicks": 2887, "unsubs": 591, "orders": 94, "rev": 10498.92, "open_rate": null, "click_rate": 2.51, "cvr": 0.082, "rps": 0.091, "aov": 111.69, "name": "Sale", "campaigns": 7}, {"deliveries": 78773, "opens": 0, "clicks": 2263, "unsubs": 309, "orders": 83, "rev": 8741.11, "open_rate": null, "click_rate": 2.87, "cvr": 0.105, "rps": 0.111, "aov": 105.31, "name": "Nurses Week", "campaigns": 10}, {"deliveries": 155883, "opens": 0, "clicks": 6298, "unsubs": 981, "orders": 60, "rev": 6571.15, "open_rate": null, "click_rate": 4.04, "cvr": 0.038, "rps": 0.042, "aov": 109.52, "name": "New", "campaigns": 9}, {"deliveries": 87867, "opens": 0, "clicks": 2179, "unsubs": 525, "orders": 21, "rev": 3014.45, "open_rate": null, "click_rate": 2.48, "cvr": 0.024, "rps": 0.034, "aov": 143.55, "name": "Apparel", "campaigns": 5}, {"deliveries": 73354, "opens": 0, "clicks": 1988, "unsubs": 423, "orders": 20, "rev": 2414.33, "open_rate": null, "click_rate": 2.71, "cvr": 0.027, "rps": 0.033, "aov": 120.72, "name": "Reviews", "campaigns": 5}, {"deliveries": 34982, "opens": 0, "clicks": 1400, "unsubs": 217, "orders": 14, "rev": 1411.79, "open_rate": null, "click_rate": 4.0, "cvr": 0.04, "rps": 0.04, "aov": 100.84, "name": "Product Highlight", "campaigns": 2}, {"deliveries": 41868, "opens": 0, "clicks": 1018, "unsubs": 268, "orders": 8, "rev": 1208.41, "open_rate": null, "click_rate": 2.43, "cvr": 0.019, "rps": 0.029, "aov": 151.05, "name": "Seasonal", "campaigns": 2}, {"deliveries": 32642, "opens": 0, "clicks": 640, "unsubs": 217, "orders": 9, "rev": 915.99, "open_rate": null, "click_rate": 1.96, "cvr": 0.028, "rps": 0.028, "aov": 101.78, "name": "Best Sellers", "campaigns": 2}, {"deliveries": 22221, "opens": 0, "clicks": 475, "unsubs": 140, "orders": 5, "rev": 576.67, "open_rate": null, "click_rate": 2.14, "cvr": 0.023, "rps": 0.026, "aov": 115.33, "name": "Collection Highlight", "campaigns": 1}, {"deliveries": 12987, "opens": 0, "clicks": 391, "unsubs": 51, "orders": 4, "rev": 456.89, "open_rate": null, "click_rate": 3.01, "cvr": 0.031, "rps": 0.035, "aov": 114.22, "name": "Doctors Day", "campaigns": 1}], "flows": [{"deliveries": 220798, "opens": 88170, "clicks": 6329, "unsubs": 1339, "orders": 3623, "rev": 418681.51, "open_rate": 39.9, "click_rate": 2.87, "cvr": 1.641, "rps": 1.896, "aov": 115.56, "name": "Welcome Series", "channel": "Email"}, {"deliveries": 33862, "opens": 0, "clicks": 6160, "unsubs": 929, "orders": 1277, "rev": 141491.14, "open_rate": null, "click_rate": 18.19, "cvr": 3.771, "rps": 4.178, "aov": 110.8, "name": "SMS Welcome", "channel": "SMS"}, {"deliveries": 94816, "opens": 37543, "clicks": 2559, "unsubs": 334, "orders": 743, "rev": 78135.67, "open_rate": 39.6, "click_rate": 2.7, "cvr": 0.784, "rps": 0.824, "aov": 105.16, "name": "Abandoned Cart", "channel": "Email"}, {"deliveries": 34742, "opens": 14328, "clicks": 906, "unsubs": 98, "orders": 547, "rev": 59406.57, "open_rate": 41.2, "click_rate": 2.61, "cvr": 1.574, "rps": 1.71, "aov": 108.6, "name": "Cherokee | Abandoned Checkout", "channel": "Email"}, {"deliveries": 199837, "opens": 71328, "clicks": 2894, "unsubs": 821, "orders": 431, "rev": 53062.58, "open_rate": 35.7, "click_rate": 1.45, "cvr": 0.216, "rps": 0.266, "aov": 123.12, "name": "Browse Abandonment", "channel": "Email"}, {"deliveries": 11134, "opens": 0, "clicks": 1279, "unsubs": 295, "orders": 179, "rev": 14973.14, "open_rate": null, "click_rate": 11.49, "cvr": 1.608, "rps": 1.345, "aov": 83.65, "name": "Abandoned Cart", "channel": "SMS"}, {"deliveries": 63868, "opens": 26575, "clicks": 756, "unsubs": 376, "orders": 138, "rev": 13749.94, "open_rate": 41.6, "click_rate": 1.18, "cvr": 0.216, "rps": 0.215, "aov": 99.64, "name": "Post Purchase", "channel": "Email"}, {"deliveries": 24644, "opens": 0, "clicks": 980, "unsubs": 389, "orders": 50, "rev": 4609.94, "open_rate": null, "click_rate": 3.98, "cvr": 0.203, "rps": 0.187, "aov": 92.2, "name": "Browse Abandonment", "channel": "SMS"}, {"deliveries": 673, "opens": 364, "clicks": 106, "unsubs": 5, "orders": 31, "rev": 4447.25, "open_rate": 54.1, "click_rate": 15.75, "cvr": 4.606, "rps": 6.608, "aov": 143.46, "name": "Back In Stock", "channel": "Email"}, {"deliveries": 26393, "opens": 9990, "clicks": 104, "unsubs": 120, "orders": 17, "rev": 1640.71, "open_rate": 37.9, "click_rate": 0.39, "cvr": 0.064, "rps": 0.062, "aov": 96.51, "name": "Winback-08272025", "channel": "Email"}, {"deliveries": 127, "opens": 40, "clicks": 18, "unsubs": 0, "orders": 0, "rev": 0.0, "open_rate": 31.5, "click_rate": 14.17, "cvr": 0.0, "rps": 0.0, "aov": null, "name": "Account Locked", "channel": "Email"}, {"deliveries": 18494, "opens": 12889, "clicks": 1308, "unsubs": 72, "orders": 0, "rev": 0.0, "open_rate": 69.7, "click_rate": 7.07, "cvr": 0.0, "rps": 0.0, "aov": null, "name": "Account created", "channel": "Email"}, {"deliveries": 3240, "opens": 1872, "clicks": 41, "unsubs": 1, "orders": 0, "rev": 0.0, "open_rate": 57.8, "click_rate": 1.27, "cvr": 0.0, "rps": 0.0, "aov": null, "name": "Account password changed", "channel": "Email"}, {"deliveries": 4505, "opens": 3406, "clicks": 2995, "unsubs": 10, "orders": 0, "rev": 0.0, "open_rate": 75.6, "click_rate": 66.48, "cvr": 0.0, "rps": 0.0, "aov": null, "name": "Account password reset", "channel": "Email"}, {"deliveries": 1864, "opens": 1261, "clicks": 136, "unsubs": 4, "orders": 0, "rev": 0.0, "open_rate": 67.7, "click_rate": 7.3, "cvr": 0.0, "rps": 0.0, "aov": null, "name": "Account updated", "channel": "Email"}, {"deliveries": 46938, "opens": 36239, "clicks": 19740, "unsubs": 39, "orders": 0, "rev": 0.0, "open_rate": 77.2, "click_rate": 42.06, "cvr": 0.0, "rps": 0.0, "aov": null, "name": "Order Confirmation", "channel": "Email"}], "flow_total_rev": 790198.43, "welcome_msgs": [{"deliveries": 83042, "opens": 39082, "clicks": 4658, "unsubs": 679, "orders": 3339, "rev": 388467.96, "open_rate": 47.1, "click_rate": 5.61, "cvr": 4.021, "rps": 4.678, "aov": 116.34, "name": "welcome-email1", "unsub_rate": 0.82}, {"deliveries": 71054, "opens": 25628, "clicks": 906, "unsubs": 347, "orders": 171, "rev": 16277.82, "open_rate": 36.1, "click_rate": 1.28, "cvr": 0.241, "rps": 0.229, "aov": 95.19, "name": "welcome-email2", "unsub_rate": 0.49}, {"deliveries": 66702, "opens": 23460, "clicks": 765, "unsubs": 313, "orders": 113, "rev": 13935.73, "open_rate": 35.2, "click_rate": 1.15, "cvr": 0.169, "rps": 0.209, "aov": 123.33, "name": "welcome-email3", "unsub_rate": 0.47}], "ac_msgs": [{"deliveries": 28995, "opens": 11516, "clicks": 749, "unsubs": 109, "orders": 244, "rev": 24658.92, "open_rate": 39.7, "click_rate": 2.58, "cvr": 0.842, "rps": 0.85, "aov": 101.06, "name": "AbandonedCart_1 (First Time)", "unsub_rate": 0.38}, {"deliveries": 12285, "opens": 5022, "clicks": 392, "unsubs": 56, "orders": 137, "rev": 14901.82, "open_rate": 40.9, "click_rate": 3.19, "cvr": 1.115, "rps": 1.213, "aov": 108.77, "name": "Copy of AbandonedCart_1 (First Time)", "unsub_rate": 0.46}, {"deliveries": 9291, "opens": 0, "clicks": 1061, "unsubs": 266, "orders": 144, "rev": 11507.07, "open_rate": null, "click_rate": 11.42, "cvr": 1.55, "rps": 1.239, "aov": 79.91, "name": "SMS #1 (First Time)", "unsub_rate": 2.86}, {"deliveries": 27412, "opens": 10032, "clicks": 515, "unsubs": 94, "orders": 89, "rev": 9191.04, "open_rate": 36.6, "click_rate": 1.88, "cvr": 0.325, "rps": 0.335, "aov": 103.27, "name": "AbandonedCart_2 (First Time)", "unsub_rate": 0.34}, {"deliveries": 4816, "opens": 2236, "clicks": 183, "unsubs": 14, "orders": 76, "rev": 8371.38, "open_rate": 46.4, "click_rate": 3.8, "cvr": 1.578, "rps": 1.738, "aov": 110.15, "name": "AbandonedCart_1 (Repeat)", "unsub_rate": 0.29}, {"deliveries": 3030, "opens": 1458, "clicks": 153, "unsubs": 6, "orders": 68, "rev": 7667.04, "open_rate": 48.1, "click_rate": 5.05, "cvr": 2.244, "rps": 2.53, "aov": 112.75, "name": "Copy of AbandonedCart_1 (Repeat)", "unsub_rate": 0.2}, {"deliveries": 4414, "opens": 1937, "clicks": 183, "unsubs": 5, "orders": 44, "rev": 5661.49, "open_rate": 43.9, "click_rate": 4.15, "cvr": 0.997, "rps": 1.283, "aov": 128.67, "name": "AbandonedCart_2 (Repeat)", "unsub_rate": 0.11}, {"deliveries": 11295, "opens": 4160, "clicks": 256, "unsubs": 42, "orders": 51, "rev": 4869.88, "open_rate": 36.8, "click_rate": 2.27, "cvr": 0.452, "rps": 0.431, "aov": 95.49, "name": "Copy of AbandonedCart_2 (First Time)", "unsub_rate": 0.37}, {"deliveries": 1843, "opens": 0, "clicks": 218, "unsubs": 29, "orders": 35, "rev": 3466.07, "open_rate": null, "click_rate": 11.83, "cvr": 1.899, "rps": 1.881, "aov": 99.03, "name": "SMS #1 (repeat)", "unsub_rate": 1.57}, {"deliveries": 2569, "opens": 1182, "clicks": 128, "unsubs": 8, "orders": 34, "rev": 2814.08, "open_rate": 46.0, "click_rate": 4.98, "cvr": 1.323, "rps": 1.095, "aov": 82.77, "name": "Copy of AbandonedCart_2 (Repeat)", "unsub_rate": 0.31}], "browse_msgs": [{"deliveries": 71975, "opens": 25469, "clicks": 891, "unsubs": 319, "orders": 161, "rev": 22022.81, "open_rate": 35.4, "click_rate": 1.24, "cvr": 0.224, "rps": 0.306, "aov": 136.79, "name": "BrowseAbandon_1", "unsub_rate": 0.44}, {"deliveries": 31208, "opens": 12043, "clicks": 533, "unsubs": 139, "orders": 117, "rev": 15275.62, "open_rate": 38.6, "click_rate": 1.71, "cvr": 0.375, "rps": 0.489, "aov": 130.56, "name": "Copy of BrowseAbandon_1", "unsub_rate": 0.45}, {"deliveries": 55345, "opens": 18274, "clicks": 751, "unsubs": 218, "orders": 68, "rev": 7613.63, "open_rate": 33.0, "click_rate": 1.36, "cvr": 0.123, "rps": 0.138, "aov": 111.97, "name": "BrowseAbandon_2 (Prospects)", "unsub_rate": 0.39}, {"deliveries": 24644, "opens": 0, "clicks": 980, "unsubs": 389, "orders": 50, "rev": 4609.94, "open_rate": null, "click_rate": 3.98, "cvr": 0.203, "rps": 0.187, "aov": 92.2, "name": "SMS #1", "unsub_rate": 1.58}, {"deliveries": 13240, "opens": 5058, "clicks": 242, "unsubs": 49, "orders": 37, "rev": 3886.56, "open_rate": 38.2, "click_rate": 1.83, "cvr": 0.279, "rps": 0.294, "aov": 105.04, "name": "BrowseAbandon_2 (Repeat)", "unsub_rate": 0.37}, {"deliveries": 21736, "opens": 7676, "clicks": 316, "unsubs": 72, "orders": 35, "rev": 2995.75, "open_rate": 35.3, "click_rate": 1.45, "cvr": 0.161, "rps": 0.138, "aov": 85.59, "name": "Copy of BrowseAbandon_2 (Prospects)", "unsub_rate": 0.33}, {"deliveries": 6333, "opens": 2808, "clicks": 161, "unsubs": 24, "orders": 13, "rev": 1268.2, "open_rate": 44.3, "click_rate": 2.54, "cvr": 0.205, "rps": 0.2, "aov": 97.55, "name": "Copy of BrowseAbandon_2 (Repeat)", "unsub_rate": 0.38}], "cherokee_msgs": [{"deliveries": 11989, "opens": 5320, "clicks": 453, "unsubs": 30, "orders": 283, "rev": 26311.79, "open_rate": 44.4, "click_rate": 3.78, "cvr": 2.36, "rps": 2.195, "aov": 92.97, "name": "Email #1: FC: Your Order Is Waiting! V2", "unsub_rate": 0.25}, {"deliveries": 10520, "opens": 4103, "clicks": 189, "unsubs": 32, "orders": 107, "rev": 13967.11, "open_rate": 39.0, "click_rate": 1.8, "cvr": 1.017, "rps": 1.328, "aov": 130.53, "name": "Email #2: FC: You left something behind V2", "unsub_rate": 0.3}, {"deliveries": 9898, "opens": 3784, "clicks": 175, "unsubs": 34, "orders": 82, "rev": 11669.39, "open_rate": 38.2, "click_rate": 1.77, "cvr": 0.828, "rps": 1.179, "aov": 142.31, "name": "Email #3: FC: Complete your purchase V2", "unsub_rate": 0.34}, {"deliveries": 2335, "opens": 1121, "clicks": 89, "unsubs": 2, "orders": 75, "rev": 7458.27, "open_rate": 48.0, "click_rate": 3.81, "cvr": 3.212, "rps": 3.194, "aov": 99.44, "name": "Email #1: RC: Your Order Is Waiting! V2", "unsub_rate": 0.09}], "smswelcome_msgs": [{"deliveries": 20144, "opens": 0, "clicks": 5351, "unsubs": 670, "orders": 1234, "rev": 136663.5, "open_rate": null, "click_rate": 26.56, "cvr": 6.126, "rps": 6.784, "aov": 110.75, "name": "SMS #1 15% Off", "unsub_rate": 3.33}, {"deliveries": 13718, "opens": 0, "clicks": 809, "unsubs": 259, "orders": 43, "rev": 4827.64, "open_rate": null, "click_rate": 5.9, "cvr": 0.313, "rps": 0.352, "aov": 112.27, "name": "SMS #2 - reminder", "unsub_rate": 1.89}], "postpurchase_msgs": [{"deliveries": 30535, "opens": 13159, "clicks": 486, "unsubs": 164, "orders": 87, "rev": 8194.48, "open_rate": 43.1, "click_rate": 1.59, "cvr": 0.285, "rps": 0.268, "aov": 94.19, "name": "Email #2: Secondary Purchase Push", "unsub_rate": 0.54}, {"deliveries": 33333, "opens": 13416, "clicks": 270, "unsubs": 212, "orders": 51, "rev": 5555.46, "open_rate": 40.2, "click_rate": 0.81, "cvr": 0.153, "rps": 0.167, "aov": 108.93, "name": "Email #3: Final Purchase Push", "unsub_rate": 0.64}], "winback_msgs": [{"deliveries": 13320, "opens": 5081, "clicks": 57, "unsubs": 60, "orders": 11, "rev": 1101.56, "open_rate": 38.1, "click_rate": 0.43, "cvr": 0.083, "rps": 0.083, "aov": 100.14, "name": "Email #1: Discount", "unsub_rate": 0.45}, {"deliveries": 13073, "opens": 4909, "clicks": 47, "unsubs": 60, "orders": 6, "rev": 539.15, "open_rate": 37.6, "click_rate": 0.36, "cvr": 0.046, "rps": 0.041, "aov": 89.86, "name": "Email #2: Discount Reminder V2", "unsub_rate": 0.46}], "flow_monthly": {"Welcome Series": [92549.0, 69038.0, 90137.0, 77868.0, 89088.0], "SMS Welcome": [31816.0, 27822.0, 27940.0, 26942.0, 26971.0], "Abandoned Cart": [18846.0, 14722.0, 16200.0, 21438.0, 21903.0], "Cherokee | Abandoned Checkout": [14273.0, 7749.0, 8210.0, 8423.0, 20750.0], "Browse Abandonment": [11897.0, 9609.0, 9722.0, 12239.0, 14205.0], "Post Purchase": [1816.0, 2188.0, 3546.0, 2209.0, 3991.0]}, "order_conf": {"deliveries": 46938, "open_rate": 77.2, "click_rate": 42.1, "rev": 0.0}, "bis": {"deliveries": 673, "rps": 6.61, "cvr": 4.6, "rev": 4447.25}, "weekday": [{"day": "Friday", "rps": 0.0524, "camps": 5, "rev": 17837.0}, {"day": "Monday", "rps": 0.0392, "camps": 9, "rev": 20308.0}, {"day": "Saturday", "rps": 0.0305, "camps": 21, "rev": 54921.0}, {"day": "Sunday", "rps": 0.037, "camps": 4, "rev": 12291.0}, {"day": "Thursday", "rps": 0.0394, "camps": 22, "rev": 63486.0}, {"day": "Tuesday", "rps": 0.0367, "camps": 22, "rev": 57239.0}, {"day": "Wednesday", "rps": 0.0383, "camps": 12, "rev": 18046.0}], "flows_grouped": [{"name": "Welcome Series", "channels": ["Email"], "rev_total": 418681.51, "recipients_total": 220798, "orders_total": 3623, "rps_total": 1.896, "cvr_total": 1.641, "email": {"recipients": 220798, "orders": 3623, "rev": 418681.51, "rps": 1.896, "cvr": 1.641, "clicks": 6329, "click_rate": 2.87}, "sms": null}, {"name": "SMS Welcome", "channels": ["SMS"], "rev_total": 141491.14, "recipients_total": 33862, "orders_total": 1277, "rps_total": 4.178, "cvr_total": 3.771, "email": null, "sms": {"recipients": 33862, "orders": 1277, "rev": 141491.14, "rps": 4.178, "cvr": 3.771, "clicks": 6160, "click_rate": 18.19}}, {"name": "Abandoned Cart", "channels": ["Email", "SMS"], "rev_total": 93108.81, "recipients_total": 105950, "orders_total": 922, "rps_total": 0.879, "cvr_total": 0.87, "email": {"recipients": 94816, "orders": 743, "rev": 78135.67, "rps": 0.824, "cvr": 0.784, "clicks": 2559, "click_rate": 2.7}, "sms": {"recipients": 11134, "orders": 179, "rev": 14973.14, "rps": 1.345, "cvr": 1.608, "clicks": 1279, "click_rate": 11.49}}, {"name": "Cherokee | Abandoned Checkout", "channels": ["Email"], "rev_total": 59406.57, "recipients_total": 34742, "orders_total": 547, "rps_total": 1.71, "cvr_total": 1.574, "email": {"recipients": 34742, "orders": 547, "rev": 59406.57, "rps": 1.71, "cvr": 1.574, "clicks": 906, "click_rate": 2.61}, "sms": null}, {"name": "Browse Abandonment", "channels": ["Email", "SMS"], "rev_total": 57672.51, "recipients_total": 224481, "orders_total": 481, "rps_total": 0.257, "cvr_total": 0.214, "email": {"recipients": 199837, "orders": 431, "rev": 53062.58, "rps": 0.266, "cvr": 0.216, "clicks": 2894, "click_rate": 1.45}, "sms": {"recipients": 24644, "orders": 50, "rev": 4609.94, "rps": 0.187, "cvr": 0.203, "clicks": 980, "click_rate": 3.98}}, {"name": "Post Purchase", "channels": ["Email"], "rev_total": 13749.94, "recipients_total": 63868, "orders_total": 138, "rps_total": 0.215, "cvr_total": 0.216, "email": {"recipients": 63868, "orders": 138, "rev": 13749.94, "rps": 0.215, "cvr": 0.216, "clicks": 756, "click_rate": 1.18}, "sms": null}, {"name": "Back In Stock", "channels": ["Email"], "rev_total": 4447.25, "recipients_total": 673, "orders_total": 31, "rps_total": 6.608, "cvr_total": 4.606, "email": {"recipients": 673, "orders": 31, "rev": 4447.25, "rps": 6.608, "cvr": 4.606, "clicks": 106, "click_rate": 15.75}, "sms": null}, {"name": "Winback-08272025", "channels": ["Email"], "rev_total": 1640.71, "recipients_total": 26393, "orders_total": 17, "rps_total": 0.062, "cvr_total": 0.064, "email": {"recipients": 26393, "orders": 17, "rev": 1640.71, "rps": 0.062, "cvr": 0.064, "clicks": 104, "click_rate": 0.39}, "sms": null}], "channel_rev": {"email": 873252.1, "sms": 196883.92, "flow_email": 629124.21, "flow_sms": 161074.21, "camp_email": 244127.89, "camp_sms": 35809.71}};
+const $=(s,r=document)=>r.querySelector(s);
+const fmt$=n=>'$'+Math.round(n).toLocaleString();
+const fmtK=n=>n>=1000?'$'+(n/1000).toFixed(n>=100000?0:1)+'K':'$'+Math.round(n);
+const fnum=n=>n==null?'—':Number(n).toLocaleString();
+const pct=n=>n==null?'—':n.toFixed(n<1?2:1)+'%';
+const C={navy:'#000255',teal:'#00058D',tealL:'#3a44b5',amber:'#122EEA',red:'#c0473f',green:'#2e8b6f',sms:'#6E79E8',slate:'#8a93a6',grid:'#e6e8ee'};
+// List growth — net new subscribers/month (unique, net of unsubs), pulled live from Klaviyo (Jan–May 2026)
+const LIST={email_net:[14791,12110,15455,15196,25251],sms_net:[2020,1527,2494,2586,2450],
+  cum:[16811,30448,48397,66179,93880],
+  email_subs:[19662,16102,19273,18666,30952],email_unsubs:[4871,3992,3818,3470,5701],
+  sms_subs:[4496,3606,4214,3981,3986],sms_unsubs:[2476,2079,1720,1395,1536]};
+// Cohort analysis — transcribed from Klaviyo's Cohort report (Cherokee Uniforms). fi = index of first 2026 cohort (Jan '26).
+// lead.v[r][n] = % of subscribe-cohort r placing an order n months later. purch.v[r][n] = avg repeat $ per buyer n months after first order.
+const COHORT={
+  m:["Jun '25","Jul '25","Aug '25","Sep '25","Oct '25","Nov '25","Dec '25","Jan '26","Feb '26","Mar '26","Apr '26","May '26"],
+  fi:7,
+  lead:{
+    size:[11800,15100,16800,15700,14300,15900,14800,19500,15900,18700,18400,17400],
+    v:[[20.73,3.55,1.24,1.02,0.69,0.74,0.29,0.76,0.65,0.61,0.57,0.84],
+       [25.49,3.11,1.30,0.93,0.77,0.28,0.84,0.50,0.66,0.64,0.97],
+       [21.56,2.65,1.09,0.78,0.28,0.73,0.56,0.58,0.57,0.85],
+       [21.98,2.30,1.06,0.33,0.72,0.52,0.54,0.58,0.79],
+       [20.48,2.66,0.66,1.07,0.74,0.65,0.76,0.91],
+       [20.11,1.79,1.37,0.76,0.72,0.69,0.93],
+       [9.26,3.00,0.79,0.86,0.82,0.72],
+       [19.01,2.21,1.16,0.83,0.92],
+       [19.48,2.63,1.22,1.15],
+       [20.71,2.59,1.60],
+       [22.15,3.71],
+       [26.71]]
+  },
+  purch:{
+    size:[4200,6600,6300,6200,5500,6500,6500,7700,5900,6600,7200,8400],
+    first:[122,113,113,112,117,116,107,108,105,115,105,110],
+    v:[[10,12,4.4,3.7,3.5,3,3.1,2.2,2.9,3.2,1.9,3],
+       [13,8.2,4.3,3.4,2.4,2.1,2.4,1.5,3,2,2.9],
+       [14,8.8,3.5,2.6,2.2,2.8,2.4,2.4,2.2,2.7],
+       [12,8.2,3.8,2.9,3.4,1.8,2,1.8,2.5],
+       [13,11,4.1,3.9,2.2,2.1,1.9,3],
+       [16,8.7,3.6,2.6,1.8,2.5,2.6],
+       [19,9.2,2.1,1.7,2.8,2.2],
+       [12,6.2,3.8,3.2,2.5],
+       [8.6,8.4,4,3.5],
+       [9.9,8.8,4.1],
+       [8.6,8.2],
+       [8.5]]
+  }
+};
+Chart.defaults.font.family="-apple-system,Segoe UI,Roboto,Helvetica,Arial,sans-serif";
+Chart.defaults.font.size=11.5; Chart.defaults.color='#5a6b7c'; Chart.defaults.animation=false;
+Chart.defaults.plugins.legend.labels.boxWidth=11; Chart.defaults.plugins.legend.labels.boxHeight=11;
+Chart.defaults.plugins.legend.labels.usePointStyle=true;
+
+// Reference-line plugin — LOCAL to one chart, guarded against charts without a y scale
+const refLine={id:'refLine',afterDraw(c){
+  if(!c.scales||!c.scales.y) return;
+  const y=c.scales.y.getPixelForValue(100); const a=c.chartArea; const x=c.ctx;
+  x.save(); x.strokeStyle=C.navy; x.setLineDash([5,4]); x.lineWidth=1;
+  x.beginPath(); x.moveTo(a.left,y); x.lineTo(a.right,y); x.stroke(); x.restore();
+}};
+
+/* ---------- lazy builders (charts only render when their tab is visible & sized) ---------- */
+const built={};
+const B={};
+
+B.exec=()=>{
+  const s=DATA.summary, ch=DATA.channel_rev;
+  $('#execKpis').innerHTML=[
+    ['Program revenue','$1.07M','Jan–May 2026 · ~'+fmtK(s.avg_monthly_rev)+'/mo'],
+    ['Flow revenue share',s.flow_rev_share+'%','$790K from just '+s.flow_send_share+'% of sends'],
+    ['Flow vs campaign $/send',s.rps_ratio+'×','$'+s.flow_rps.toFixed(2)+' flow vs $'+s.camp_rps.toFixed(2)+' campaign'],
+    ['Record month','+'+s.may_mom+'%','May hit '+fmtK(s.may_rev)+' on Nurses Week']
+  ].map(k=>`<div class="kpi"><div class="lab">${k[0]}</div><div class="val">${k[1]}</div><div class="note">${k[2]}</div></div>`).join('');
+
+  new Chart($('#cMonthly'),{data:{labels:DATA.months,datasets:[
+    {type:'bar',label:'Flows',data:DATA.flow_rev,backgroundColor:C.teal,stack:'s',borderRadius:3,order:2},
+    {type:'bar',label:'Campaigns',data:DATA.campaign_rev,backgroundColor:C.amber,stack:'s',borderRadius:3,order:2},
+    {type:'line',label:'Total',data:DATA.total_rev,borderColor:C.navy,backgroundColor:'#fff',tension:.3,borderWidth:3,pointRadius:4,pointBackgroundColor:C.navy,pointBorderColor:'#fff',pointBorderWidth:1.5,stack:'total',fill:false,order:0}
+  ]},options:{maintainAspectRatio:false,plugins:{tooltip:{callbacks:{label:c=>c.dataset.label+': '+fmt$(c.parsed.y)}}},
+    scales:{x:{grid:{display:false},stacked:true},y:{stacked:true,grid:{color:C.grid},ticks:{callback:v=>'$'+v/1000+'K'}}}}});
+
+  new Chart($('#cSplit'),{type:'doughnut',data:{labels:['Flows — $790K','Campaigns — $280K'],
+    datasets:[{data:[s.flow_rev,s.camp_rev],backgroundColor:[C.teal,C.amber],borderWidth:2,borderColor:'#fff'}]},
+    options:{maintainAspectRatio:false,cutout:'62%',plugins:{legend:{position:'bottom'},
+    tooltip:{callbacks:{label:c=>c.label+' ('+(c.parsed/s.program_rev*100).toFixed(1)+'%)'}}}}});
+
+  new Chart($('#cRps'),{type:'bar',data:{labels:['Flows','Campaigns'],datasets:[{data:[s.flow_rps,s.camp_rps],
+    backgroundColor:[C.teal,C.amber],borderRadius:5}]},options:{maintainAspectRatio:false,indexAxis:'y',
+    plugins:{legend:{display:false},tooltip:{callbacks:{label:c=>'$'+c.parsed.x.toFixed(3)+' per send'}}},
+    scales:{x:{grid:{color:C.grid},ticks:{callback:v=>'$'+v.toFixed(2)}},y:{grid:{display:false}}}}});
+
+  new Chart($('#cChanRev'),{type:'bar',data:{labels:['Email','SMS'],datasets:[
+    {label:'Flows',data:[ch.flow_email,ch.flow_sms],backgroundColor:C.teal,stack:'s',borderRadius:3},
+    {label:'Campaigns',data:[ch.camp_email,ch.camp_sms],backgroundColor:C.amber,stack:'s',borderRadius:3}
+  ]},options:{maintainAspectRatio:false,plugins:{tooltip:{callbacks:{label:c=>c.dataset.label+': '+fmt$(c.parsed.y),
+    footer:items=>{const t=items.reduce((a,b)=>a+b.parsed.y,0);return 'Total: '+fmt$(t)+' ('+(t/s.program_rev*100).toFixed(0)+'%)';}}}},
+    scales:{x:{grid:{display:false},stacked:true},y:{stacked:true,grid:{color:C.grid},ticks:{callback:v=>'$'+v/1000+'K'}}}}});
+
+  new Chart($('#cListGrowth'),{data:{labels:DATA.months,datasets:[
+    {type:'bar',label:'Email net new',data:LIST.email_net,backgroundColor:C.teal,stack:'s',borderRadius:3,order:2},
+    {type:'bar',label:'SMS net new',data:LIST.sms_net,backgroundColor:C.sms,stack:'s',borderRadius:3,order:2},
+    {type:'line',label:'Cumulative',data:LIST.cum,borderColor:C.navy,backgroundColor:'#fff',tension:.3,borderWidth:2.5,pointRadius:3,pointBackgroundColor:C.navy,pointBorderColor:'#fff',pointBorderWidth:1.5,yAxisID:'y2',order:0}
+  ]},options:{maintainAspectRatio:false,plugins:{legend:{position:'bottom'},tooltip:{callbacks:{label:c=>c.dataset.label+': '+c.parsed.y.toLocaleString()}}},
+    scales:{x:{grid:{display:false},stacked:true},
+      y:{stacked:true,grid:{color:C.grid},ticks:{callback:v=>(v/1000)+'K'},title:{display:true,text:'net new / mo'}},
+      y2:{position:'right',grid:{display:false},ticks:{callback:v=>(v/1000)+'K'},title:{display:true,text:'cumulative'}}}}});
+
+  new Chart($('#cSendVol'),{type:'bar',data:{labels:DATA.months,datasets:[
+    {label:'Flows',data:DATA.flow_sends,backgroundColor:C.teal,stack:'s',borderRadius:3},
+    {label:'Campaigns',data:DATA.campaign_sends,backgroundColor:C.amber,stack:'s',borderRadius:3}
+  ]},options:{maintainAspectRatio:false,plugins:{legend:{position:'bottom'},tooltip:{callbacks:{label:c=>c.dataset.label+': '+c.parsed.y.toLocaleString(),
+    footer:items=>{const t=items.reduce((a,b)=>a+b.parsed.y,0);const fl=items.find(i=>i.dataset.label==='Flows');return 'Total: '+t.toLocaleString()+(fl?' · flows '+(fl.parsed.y/t*100).toFixed(0)+'%':'');}}}},
+    scales:{x:{grid:{display:false},stacked:true},y:{stacked:true,grid:{color:C.grid},ticks:{callback:v=>(v/1000000)+'M'}}}}});
+};
+
+B.flows=()=>{
+  const fg=DATA.flows_grouped, ftot=DATA.flow_total_rev;
+  // stacked ranking by flow (email + sms)
+  new Chart($('#cFlowRank'),{type:'bar',data:{labels:fg.map(f=>f.name.replace('Cherokee | ','Cherokee — ')),datasets:[
+    {label:'Email',data:fg.map(f=>f.email?f.email.rev:0),backgroundColor:C.teal,stack:'s',borderRadius:3},
+    {label:'SMS',data:fg.map(f=>f.sms?f.sms.rev:0),backgroundColor:C.sms,stack:'s',borderRadius:3}
+  ]},options:{maintainAspectRatio:false,indexAxis:'y',plugins:{legend:{position:'top'},
+    tooltip:{callbacks:{label:c=>c.dataset.label+': '+fmt$(c.parsed.x),
+      footer:items=>{const t=items.reduce((a,b)=>a+b.parsed.x,0);return 'Total: '+fmt$(t)+' ('+(t/ftot*100).toFixed(1)+'% of flow rev)';}}}},
+    scales:{x:{stacked:true,grid:{color:C.grid},ticks:{callback:v=>'$'+v/1000+'K'}},y:{stacked:true,grid:{display:false}}}}});
+
+  const fm=DATA.flow_monthly, fmKeys=Object.keys(fm), palette=[C.teal,C.sms,C.amber,C.navy,C.tealL,C.slate];
+  new Chart($('#cFlowTrend'),{type:'line',data:{labels:DATA.months,datasets:fmKeys.map((k,i)=>({
+    label:k.replace('Cherokee | ','Cherokee '),data:fm[k],borderColor:palette[i],backgroundColor:palette[i],tension:.3,borderWidth:2,pointRadius:2}))},
+    options:{maintainAspectRatio:false,plugins:{legend:{position:'bottom'},tooltip:{callbacks:{label:c=>c.dataset.label+': '+fmt$(c.parsed.y)}}},
+    scales:{x:{grid:{display:false}},y:{grid:{color:C.grid},ticks:{callback:v=>'$'+v/1000+'K'}}}}});
+
+  // grouped flow table with email/SMS subrows
+  const chBadge=ch=>ch.map(c=>`<span class="pill ${c==='SMS'?'sms':'email'}">${c}</span>`).join('');
+  let rows='';
+  fg.forEach(f=>{
+    const mixed=f.channels.length>1;
+    rows+=`<tr>
+      <td class="name">${f.name.replace('Cherokee | ','Cherokee — ')}</td>
+      <td>${chBadge(f.channels)}</td>
+      <td>${fnum(f.recipients_total)}</td>
+      <td>${pct((f.email?f.email.clicks:0)+(f.sms?f.sms.clicks:0)?(((f.email?f.email.clicks:0)+(f.sms?f.sms.clicks:0))/f.recipients_total*100):0)}</td>
+      <td>${pct(f.cvr_total)}</td><td>${fnum(f.orders_total)}</td>
+      <td>$${f.rps_total.toFixed(2)}</td><td><b>${fmt$(f.rev_total)}</b></td>
+      <td><div class="split"><span class="bar-mini" style="width:${Math.max(3,f.rev_total/ftot*70)}px;background:${C.teal}"></span>${(f.rev_total/ftot*100).toFixed(1)}%</div></td></tr>`;
+    if(mixed){
+      rows+=`<tr class="subrow"><td>↳ Email</td><td><span class="pill email">Email</span></td><td>${fnum(f.email.recipients)}</td><td>${pct(f.email.click_rate)}</td><td>${pct(f.email.cvr)}</td><td>${fnum(f.email.orders)}</td><td>$${f.email.rps.toFixed(2)}</td><td>${fmt$(f.email.rev)}</td><td>${(f.email.rev/ftot*100).toFixed(1)}%</td></tr>`;
+      rows+=`<tr class="subrow"><td>↳ SMS</td><td><span class="pill sms">SMS</span></td><td>${fnum(f.sms.recipients)}</td><td>${pct(f.sms.click_rate)}</td><td>${pct(f.sms.cvr)}</td><td>${fnum(f.sms.orders)}</td><td>$${f.sms.rps.toFixed(2)}</td><td>${fmt$(f.sms.rev)}</td><td>${(f.sms.rev/ftot*100).toFixed(1)}%</td></tr>`;
+    }
   });
-})();
+  $('#tFlows tbody').innerHTML=rows;
+
+  // welcome
+  new Chart($('#cWelcome'),{type:'bar',data:{labels:DATA.welcome_msgs.map((m,i)=>'Email '+(i+1)),
+    datasets:[{label:'RPR',data:DATA.welcome_msgs.map(m=>m.rps),backgroundColor:[C.green,C.slate,C.slate],borderRadius:5}]},
+    options:{maintainAspectRatio:false,plugins:{legend:{display:false},tooltip:{callbacks:{label:c=>'$'+c.parsed.y.toFixed(2)+' per recipient'}}},
+    scales:{x:{grid:{display:false}},y:{grid:{color:C.grid},ticks:{callback:v=>'$'+v}}}}});
+  $('#tWelcome tbody').innerHTML=DATA.welcome_msgs.map((m,i)=>`<tr>
+    <td class="name">Email ${i+1}</td><td>${fnum(m.deliveries)}</td><td>${pct(m.open_rate)}</td>
+    <td>${pct(m.click_rate)}</td><td>${pct(m.cvr)}</td><td>$${m.rps.toFixed(2)}</td><td><b>${fmt$(m.rev)}</b></td></tr>`).join('');
+
+  // abandoned cart message-level (email + sms), sorted by rps
+  const acSorted=DATA.ac_msgs.slice().sort((a,b)=>b.rps-a.rps);
+  new Chart($('#cAC'),{type:'bar',data:{labels:acSorted.map(m=>m.name.replace('AbandonedCart','AC').replace('Copy of ','Copy·')),
+    datasets:[{label:'RPR',data:acSorted.map(m=>m.rps),backgroundColor:acSorted.map(m=>m.name.includes('SMS')?C.sms:C.teal),borderRadius:4}]},
+    options:{maintainAspectRatio:false,indexAxis:'y',plugins:{legend:{display:false},tooltip:{callbacks:{label:c=>'$'+c.parsed.x.toFixed(2)+' per recipient'+(acSorted[c.dataIndex].name.includes('SMS')?' (SMS)':' (Email)')}}},
+    scales:{x:{grid:{color:C.grid},ticks:{callback:v=>'$'+v}},y:{grid:{display:false}}}}});
+  $('#tAC tbody').innerHTML=DATA.ac_msgs.map(m=>`<tr>
+    <td class="name">${m.name}${m.name.includes('SMS')?'<span class="pill sms">SMS</span>':'<span class="pill email">Email</span>'}</td>
+    <td>${fnum(m.deliveries)}</td><td>${pct(m.click_rate)}</td><td>${pct(m.cvr)}</td>
+    <td>$${m.rps.toFixed(2)}</td><td><b>${fmt$(m.rev)}</b></td></tr>`).join('');
+};
+
+B.campaigns=()=>{
+  const ce=DATA.camp_email, cs=DATA.camp_sms;
+  $('#campKpis').innerHTML=[
+    ['Campaign revenue','$280K','email $244K + SMS $36K'],
+    ['Send cadence','6.6 / wk','4.6 email + 2.1 SMS campaigns per week'],
+    ['Email open rate',ce.open_rate+'%','strong — above ~38% industry'],
+    ['Email click rate',ce.click_rate+'%','weak — vs 2–5% norm']
+  ].map(k=>`<div class="kpi"><div class="lab">${k[0]}</div><div class="val">${k[1]}</div><div class="note">${k[2]}</div></div>`).join('');
+
+  const cats=DATA.camp_categories_email;
+  new Chart($('#cCatRev'),{type:'bar',data:{labels:cats.map(c=>c.name),datasets:[{data:cats.map(c=>c.rev),
+    backgroundColor:cats.map(c=>['Nurses Week','Sale'].includes(c.name)?C.teal:C.tealL),borderRadius:4}]},
+    options:{maintainAspectRatio:false,indexAxis:'y',plugins:{legend:{display:false},tooltip:{callbacks:{label:c=>fmt$(c.parsed.x)}}},
+    scales:{x:{grid:{color:C.grid},ticks:{callback:v=>'$'+v/1000+'K'}},y:{grid:{display:false}}}}});
+
+  const catsByRps=cats.slice().sort((a,b)=>b.rps-a.rps);
+  new Chart($('#cCatRps'),{type:'bar',data:{labels:catsByRps.map(c=>c.name),datasets:[{data:catsByRps.map(c=>c.rps),
+    backgroundColor:catsByRps.map(c=>c.rps>=ce.rps?C.green:C.red),borderRadius:4}]},
+    options:{maintainAspectRatio:false,indexAxis:'y',plugins:{legend:{display:false},
+    tooltip:{callbacks:{label:c=>'$'+c.parsed.x.toFixed(3)+'/send'+(catsByRps[c.dataIndex].rps>=ce.rps?' · above avg':' · below avg')}}},
+    scales:{x:{grid:{color:C.grid},ticks:{callback:v=>'$'+v.toFixed(2)}},y:{grid:{display:false}}}}});
+
+  $('#tCatEmail tbody').innerHTML=cats.map(c=>`<tr>
+    <td class="name">${c.name}</td><td>${c.campaigns}</td><td>${fnum(c.deliveries)}</td>
+    <td>${pct(c.open_rate)}</td><td>${pct(c.click_rate)}</td><td>${pct(c.cvr)}</td>
+    <td>${fnum(c.orders)}</td><td>$${c.rps.toFixed(3)}</td><td>$${c.aov.toFixed(0)}</td><td><b>${fmt$(c.rev)}</b></td></tr>`).join('');
+
+  $('#tCatSms tbody').innerHTML=DATA.camp_categories_sms.map(c=>`<tr>
+    <td class="name">${c.name}</td><td>${c.campaigns}</td><td>${fnum(c.deliveries)}</td>
+    <td>${pct(c.click_rate)}</td><td>${pct(c.cvr)}</td><td>${fnum(c.orders)}</td>
+    <td>$${c.rps.toFixed(3)}</td><td>$${c.aov.toFixed(0)}</td><td><b>${fmt$(c.rev)}</b></td></tr>`).join('');
+
+  new Chart($('#cChannel'),{type:'bar',data:{labels:['Revenue / send ($)','Click rate (%)','Conv. rate (%)','AOV ($)'],
+    datasets:[
+     {label:'Email',data:[ce.rps,ce.click_rate,ce.cvr,ce.aov],backgroundColor:C.teal,borderRadius:4},
+     {label:'SMS',data:[cs.rps,cs.click_rate,cs.cvr,cs.aov],backgroundColor:C.sms,borderRadius:4}
+    ]},options:{maintainAspectRatio:false,scales:{x:{grid:{display:false}},y:{type:'logarithmic',grid:{color:C.grid}}},
+    plugins:{tooltip:{callbacks:{label:c=>c.dataset.label+': '+c.parsed.y}}}}});
+
+  const wk=DATA.weekday.slice().sort((a,b)=>b.rps-a.rps);
+  new Chart($('#cWeekday'),{type:'bar',data:{labels:wk.map(w=>w.day.slice(0,3)),datasets:[{data:wk.map(w=>w.rps),
+    backgroundColor:wk.map(w=>w.rps>=ce.rps?C.green:C.slate),borderRadius:4}]},
+    options:{maintainAspectRatio:false,plugins:{legend:{display:false},
+    tooltip:{callbacks:{label:c=>'$'+c.parsed.y.toFixed(4)+'/send · '+wk[c.dataIndex].camps+' campaigns'}}},
+    scales:{x:{grid:{display:false}},y:{grid:{color:C.grid},ticks:{callback:v=>'$'+v.toFixed(2)}}}}});
+};
+
+B.bench=()=>{
+  const ce=DATA.camp_email;
+  const find=(n,ch)=>DATA.flows.find(f=>f.name===n&&(!ch||f.channel===ch));
+  // vertical line drawn at the benchmark (x = 0% gap) for the diverging chart
+  const benchZero={id:'benchZero',afterDraw(c){if(!c.scales||!c.scales.x)return;const x=c.scales.x.getPixelForValue(0);const a=c.chartArea,ctx=c.ctx;
+    ctx.save();ctx.strokeStyle=C.navy;ctx.setLineDash([5,4]);ctx.lineWidth=1.5;ctx.beginPath();ctx.moveTo(x,a.top);ctx.lineTo(x,a.bottom);ctx.stroke();
+    ctx.setLineDash([]);ctx.fillStyle=C.navy;ctx.font='600 10px -apple-system,Segoe UI,sans-serif';ctx.textAlign='center';ctx.fillText('benchmark',x,a.top-3);ctx.restore();}};
+
+  // FLOWS: gap vs benchmark RPR, grouped by journey, broken out by channel
+  const bf=[
+    {label:'Welcome · Email',ck:find('Welcome Series').rps,bm:2.35},
+    {label:'Welcome · SMS',ck:find('SMS Welcome').rps,bm:3.00},
+    {label:'Abandoned Cart · Email',ck:find('Abandoned Cart','Email').rps,bm:3.30},
+    {label:'Abandoned Cart · SMS',ck:find('Abandoned Cart','SMS').rps,bm:3.07},
+    {label:'Browse Abandon · Email',ck:find('Browse Abandonment','Email').rps,bm:0.75},
+    {label:'Browse Abandon · SMS',ck:find('Browse Abandonment','SMS').rps,bm:0.50}
+  ];
+  bf.forEach(f=>f.gap=Math.round((f.ck/f.bm-1)*100));
+  const gapColor=g=>g>=0?C.green:(g>=-20?C.slate:C.red);
+  new Chart($('#cBenchFlow'),{type:'bar',plugins:[benchZero],data:{labels:bf.map(f=>f.label),datasets:[
+    {data:bf.map(f=>f.gap),backgroundColor:bf.map(f=>gapColor(f.gap)),borderRadius:4}
+  ]},options:{maintainAspectRatio:false,indexAxis:'y',layout:{padding:{top:14}},plugins:{legend:{display:false},
+    tooltip:{callbacks:{label:c=>{const f=bf[c.dataIndex];return (f.gap>=0?'+':'')+f.gap+'% vs benchmark  ($'+f.ck.toFixed(2)+' vs $'+f.bm.toFixed(2)+' RPR)';}}}},
+    scales:{x:{grid:{color:C.grid},ticks:{callback:v=>(v>0?'+':'')+v+'%'},title:{display:true,text:'Revenue per recipient vs. industry benchmark'}},y:{grid:{display:false}}}}});
+
+  // CAMPAIGNS: index vs benchmark (email), with dashed par line
+  const bc=[{n:'Open rate',ck:ce.open_rate,bm:37.9,unit:'%'},{n:'Click rate',ck:ce.click_rate,bm:1.7,unit:'%'},{n:'Rev / recipient',ck:ce.rps,bm:0.11,unit:'$'}];
+  new Chart($('#cBenchCamp'),{type:'bar',plugins:[refLine],data:{labels:bc.map(b=>b.n),datasets:[
+    {data:bc.map(b=>Math.round(b.ck/b.bm*100)),backgroundColor:bc.map(b=>b.ck/b.bm>=1?C.green:C.red),borderRadius:5}
+  ]},options:{maintainAspectRatio:false,plugins:{legend:{display:false},
+    tooltip:{callbacks:{label:c=>{const b=bc[c.dataIndex];const v=b.unit==='$'?'$'+b.ck.toFixed(3):b.ck+'%';const bv=b.unit==='$'?'$'+b.bm:b.bm+'%';return v+' vs benchmark '+bv+' = index '+c.parsed.y;}}}},
+    scales:{x:{grid:{display:false}},y:{grid:{color:C.grid},title:{display:true,text:'Index (benchmark = 100)'},suggestedMax:160}}}});
+
+  // SCORECARD grouped by channel
+  const vmap={up:['Ahead','up'],dn:['Behind','dn'],mid:['In line','mid']};
+  const sections=[
+    ['Campaigns — Email',[
+      ['Open rate','52.4%','~37.9% (ecommerce avg)','up','Subject lines win attention — opens well above industry.'],
+      ['Click rate','0.53%','~1.7% (2–5% target)','dn','Opens don\'t convert to clicks — the core campaign weakness.'],
+      ['Revenue / recipient','$0.037','~$0.11','dn','A direct function of the low click rate.']
+    ]],
+    ['Campaigns — SMS',[
+      ['Click rate','3.0%','2–4% promotional SMS','mid','In line with promotional SMS norms.'],
+      ['Revenue / recipient','$0.055','~$0.05–0.10','mid','Efficient per send — out-earns email campaigns.']
+    ]],
+    ['Flows — Email',[
+      ['Welcome Series RPR','$1.90','~$2.35','mid','Near benchmark overall; email-1 alone ($4.68) far exceeds it — emails 2–3 drag it down.'],
+      ['Welcome email-1 conversion','4.02%','~2.3%','up','The first welcome email is a top performer.'],
+      ['Abandoned Cart RPR','$0.82','~$3.00–3.65','dn','Largest gap in the program; Cherokee checkout flow ($1.71) shows internal upside.'],
+      ['Browse Abandonment RPR','$0.27','~$0.75','dn','Low-intent by nature, but still trails.'],
+      ['Back In Stock RPR','$6.61','high-intent flow','up','Highest-intent flow; tiny volume — grow sign-ups.']
+    ]],
+    ['Flows — SMS',[
+      ['SMS Welcome RPR','$4.18','~$3.00','up','Standout — click rate 18.2% also beats the ~14.7% benchmark.'],
+      ['Abandoned Cart RPR','$1.34','~$3.07','dn','Below benchmark, but out-earns the email leg — expand it.'],
+      ['Browse Abandonment RPR','$0.19','~$0.50','dn','Low; reserve SMS for higher-intent triggers.']
+    ]],
+    ['Program structure',[
+      ['Flows — % of program revenue','73.8%','~41%','up','Far more flow-reliant than average — efficient, and signals campaign upside.'],
+      ['Flow vs campaign RPR ratio','26×','~18×','up','Flows are exceptionally efficient vs campaigns.']
+    ]]
+  ];
+  let h='';
+  sections.forEach(([title,rows])=>{
+    h+=`<tr><td colspan="5" style="background:#eef2f7;color:#0f2540;font-weight:700;font-size:11px;text-transform:uppercase;letter-spacing:.5px;text-align:left">${title}</td></tr>`;
+    rows.forEach(r=>{ h+=`<tr><td class="name">${r[0]}</td><td><b>${r[1]}</b></td><td>${r[2]}</td><td><span class="bench ${vmap[r[3]][1]}">${vmap[r[3]][0]}</span></td><td style="text-align:left;white-space:normal;color:#3d4d5c">${r[4]}</td></tr>`; });
+  });
+  $('#tBench tbody').innerHTML=h;
+};
+
+B.actions=()=>{
+  const acts=[
+    ['Rebuild Abandoned Cart flow to industry RPR (timing + message 1 + promote winning variants + expand SMS leg)','Flows','High','Med'],
+    ['Build out Post Purchase for LTV — recommend the matching item/set when a buyer purchases a single coordinating piece','Flows','High','Med'],
+    ['Grow SMS subscriber capture & add SMS to more promo moments','Both','Med–High','Med'],
+    ['Rework Welcome emails 2 & 3 with a stronger hook/offer','Flows','Med','Low'],
+    ['Rebuild the Winback flow with a real incentive & tighter lapsed-window logic','Flows','Med','Low'],
+    ['Tighten Browse Abandonment targeting to higher-intent visitors (repeat visits, category dwell)','Flows','Med','Low'],
+    ['Rebalance campaign calendar toward seasonal/promo (Nurses Week model) & off low-efficiency Saturdays','Campaigns','Med','Low'],
+    ['Expand Back-In-Stock sign-ups on out-of-stock PDPs','Flows','Low','Low']
+  ];
+  $('#tActions tbody').innerHTML=acts.map((a,i)=>`<tr>
+    <td class="name">${i+1}</td><td style="text-align:left;white-space:normal">${a[0]}</td>
+    <td>${a[1]}</td><td><span class="bench ${a[2]==='High'||a[2]==='Med–High'?'up':a[2]==='Med'?'mid':'dn'}">${a[2]}</span></td>
+    <td>${a[3]}</td></tr>`).join('');
+};
+
+const AB={
+  summary:{total:4,experiments:3,campaign:1,flow:3,significant:0},
+  learned:[
+    {test:'Send time',changed:'Early AM vs Late PM (campaign email)',learning:'No difference. Conversions were identical (10 vs 10) and revenue near-identical across ~89K sends. Send time didn\'t move results for this campaign.',verdict:'No difference'},
+    {test:'Headline creative',changed:'Image vs text headline (Browse Abandonment, email)',learning:'No reliable difference. Conversions were a near-tie; the revenue gap is order-size noise, and a duplicate copy of the test pointed the opposite way.',verdict:'No clear difference'},
+    {test:'Message format',changed:'SMS vs MMS (Browse Abandonment)',learning:'No reliable difference. MMS had slightly higher revenue per recipient but plain SMS got more clicks — all within noise on 8–10 orders.',verdict:'No clear difference'}
+  ],
+  tests:[
+    {scope:'Campaign · Email',title:'Send time — Early AM vs Late PM',context:'Campaign: CK-01172026 “Collection Highlight: Acheive” · Jan 17, 2026',tested:'Send time',sig:false,verdict:'No significant difference',p:'1.00',
+     vars:[
+       {name:'Early AM',recipients:44518,open:55.57,click:0.41,conv:0.02,orders:10,rpr:0.020,rev:876},
+       {name:'Late PM',recipients:44469,open:56.07,click:0.46,conv:0.02,orders:10,rpr:0.020,rev:869}],
+     foot:'A dead heat — 10 orders each arm and essentially identical revenue per recipient, across ~89K recipients. This is a clean "no difference": send time was not a lever for this campaign.'},
+
+    {scope:'Flow · Email',title:'Creative — image vs text headline (live message)',context:'Flow: Browse Abandonment · “BrowseAbandon_2 (Prospects)” · 56,193 recipients',tested:'Headline creative (image vs text)',sig:false,verdict:'No significant difference',p:'0.85',
+     vars:[
+       {name:'Image headline',recipients:27946,open:31.32,click:1.41,conv:0.12,orders:34,rpr:0.166,rev:4619},
+       {name:'Text headline',recipients:28247,open:31.40,click:1.29,conv:0.13,orders:36,rpr:0.110,rev:3095}],
+     foot:'Observed: image had higher revenue per recipient, but text actually converted slightly <b>more</b> people (36 vs 34 orders). The revenue gap traces to a few larger orders, not more buyers — so the difference is not reliable. Re-test before acting.'},
+
+    {scope:'Flow · Email',title:'Creative — image vs text headline (duplicate draft)',context:'Flow: Browse Abandonment · “Copy of BrowseAbandon_2 (Prospects)” · 24,466 recipients',tested:'Headline creative (image vs text)',sig:false,verdict:'No significant difference',p:'0.75',
+     vars:[
+       {name:'Text headline',recipients:12217,open:34.80,click:1.48,conv:0.15,orders:18,rpr:0.144,rev:1745},
+       {name:'Image headline',recipients:12249,open:33.67,click:1.45,conv:0.16,orders:20,rpr:0.136,rev:1655}],
+     foot:'Same experiment as the live message above, but running on a leftover “Copy of” draft — and it points the <b>opposite</b> way. Two contradictory copies of one test confirm there\'s no real signal here; consolidate to one live version.'},
+
+    {scope:'Flow · SMS',title:'Format — SMS vs MMS',context:'Flow: Browse Abandonment · “SMS #1” · 8,525 recipients',tested:'Message format (SMS vs MMS)',sig:false,verdict:'No significant difference',p:'0.94',
+     vars:[
+       {name:'MMS (with image)',recipients:4810,open:null,click:3.08,conv:0.21,orders:10,rpr:0.204,rev:982},
+       {name:'Plain SMS',recipients:3715,open:null,click:3.81,conv:0.22,orders:8,rpr:0.187,rev:691}],
+     foot:'Observed: MMS had higher revenue per recipient, but plain SMS got a higher click rate and near-identical conversion. With only 8–10 orders per arm, neither is a reliable winner.'}
+  ]
+};
+
+B.abtests=()=>{
+  const verdictPill=v=>`<span class="bench ${v==='No difference'?'mid':'mid'}">${v}</span>`;
+  $('#abKpis').innerHTML=[
+    ['A/B tests active in 2026',AB.summary.total,AB.summary.experiments+' distinct experiments (1 campaign, 3 flow)'],
+    ['Significant winners',AB.summary.significant+' of '+AB.summary.total,'none cleared statistical significance'],
+    ['Orders per variation','8–36','too few to call a winner reliably'],
+    ['Channels tested','Email + SMS','send time, creative & format']
+  ].map(k=>`<div class="kpi"><div class="lab">${k[0]}</div><div class="val">${k[1]}</div><div class="note">${k[2]}</div></div>`).join('');
+
+  $('#tLearned tbody').innerHTML=AB.learned.map(l=>`<tr>
+    <td class="name">${l.test}</td><td>${l.changed}</td>
+    <td style="text-align:left;white-space:normal;color:#3d4d5c">${l.learning}</td>
+    <td><span class="bench mid">${l.verdict}</span></td></tr>`).join('');
+
+  const maxr=Math.max(...AB.tests.flatMap(t=>t.vars.map(v=>v.rpr)));
+  $('#abTests').innerHTML=AB.tests.map(t=>{
+    const vars=t.vars.map(v=>{
+      const hi=t.sig && v.name===t.winner; // only highlight when a test is actually significant
+      const om=v.open==null?'':`<div class="vm"><div class="l">Open</div><div class="v">${v.open.toFixed(1)}%</div></div>`;
+      const tag = t.sig ? (hi?'<span class="vtag">WINNER</span>':'') : '';
+      return `<div class="var ${hi?'hi':''}">
+        <div class="vname">${v.name}</div>${tag}
+        <div class="vmetrics">
+          <div class="vm"><div class="l">Recipients</div><div class="v">${v.recipients.toLocaleString()}</div></div>
+          ${om}
+          <div class="vm"><div class="l">Click</div><div class="v">${v.click.toFixed(2)}%</div></div>
+          <div class="vm"><div class="l">Conv. rate</div><div class="v">${v.conv.toFixed(2)}%</div></div>
+          <div class="vm"><div class="l">Orders</div><div class="v">${v.orders}</div></div>
+          <div class="vm"><div class="l">Rev / recip.</div><div class="v">$${v.rpr.toFixed(3)}</div></div>
+        </div>
+        <div class="abrprbar"><span style="width:${Math.max(4,v.rpr/maxr*100)}%;background:${C.slate}"></span></div>
+      </div>`;
+    }).join('');
+    return `<div class="card abtest">
+      <div class="abhead"><div><span class="scope">${t.scope}</span><h4>${t.title}</h4><div class="csub">${t.context} · tested: ${t.tested}</div></div>
+        <span class="conf inc">${t.verdict} · p=${t.p}</span></div>
+      <div class="abvars">${vars}</div>
+      <div class="abfoot"><b>Verdict: no statistically significant difference</b> (p=${t.p}). ${t.foot}</div>
+    </div>`;
+  }).join('');
+};
+
+B.cohorts=()=>{
+  const L=COHORT.lead, P=COHORT.purch, M=COHORT.m, FI=COHORT.fi, N=12;
+  const RGB=s=>[parseInt(s.slice(1,3),16),parseInt(s.slice(3,5),16),parseInt(s.slice(5,7),16)];
+  const mix=(a,b,t)=>a.map((x,i)=>Math.round(x+(b[i]-x)*t));
+  const lerp=(v,mn,mx)=>Math.max(0,Math.min(1,(v-mn)/(mx-mn||1)));
+  const bg=(v,mn,mx,lo,hi)=>'rgb('+mix(RGB(lo),RGB(hi),lerp(v,mn,mx)).join(',')+')';
+  const ink=(v,mn,mx)=>lerp(v,mn,mx)>0.55?'#fff':'var(--ink)';
+
+  // ---- KPIs ----
+  const aov26=Math.round(P.first.slice(FI).reduce((a,b)=>a+b,0)/P.first.slice(FI).length);
+  $('#cohKpis').innerHTML=[
+    ['May 2026 lead→order','26.7%','Month-0 — best of any cohort'],
+    ['2026 lead-quality trend','▲ +7.7 pts','Jan 19.0% → May 26.7% (month-0)'],
+    ['First-order AOV · 2026','$'+aov26,'Avg across Jan–May buyer cohorts'],
+    ['12-mo repeat uplift','+33–43%','Repeat orders on top of the first (2025)']
+  ].map(k=>`<div class="kpi"><div class="lab">${k[0]}</div><div class="val">${k[1]}</div><div class="note">${k[2]}</div></div>`).join('');
+
+  // ---- Lead heatmap ----
+  (()=>{
+    let mn=Infinity,mx=-Infinity; L.v.forEach(r=>r.forEach(x=>{if(x<mn)mn=x;if(x>mx)mx=x;}));
+    const smn=Math.min(...L.size), smx=Math.max(...L.size);
+    let h='<table class="heat"><thead><tr><th>Subscribe cohort</th><th>Leads</th>';
+    for(let i=0;i<N;i++)h+='<th>'+(i+' mo')+'</th>';
+    h+='</tr></thead><tbody>';
+    M.forEach((m,r)=>{
+      h+='<tr class="ch-row'+(r>=FI?' ch-focus':'')+'"><td class="ch-lab">'+m+'</td>';
+      h+='<td style="background:'+bg(L.size[r],smn,smx,'#eef0f4','#aab2c4')+';font-weight:600">'+(L.size[r]/1000).toFixed(1)+'K</td>';
+      for(let i=0;i<N;i++){const x=L.v[r][i];
+        h+= (x==null) ? '<td class="ch-empty"></td>'
+          : '<td style="background:'+bg(x,mn,mx,'#eef1fc','#122EEA')+';color:'+ink(x,mn,mx)+'">'+x.toFixed(2)+'%</td>';}
+      h+='</tr>';
+    });
+    $('#leadHeat').innerHTML=h+'</tbody></table>';
+  })();
+
+  // ---- Purchase heatmap ----
+  (()=>{
+    let mn=Infinity,mx=-Infinity; P.v.forEach(r=>r.forEach(x=>{if(x<mn)mn=x;if(x>mx)mx=x;}));
+    const smn=Math.min(...P.size), smx=Math.max(...P.size);
+    let h='<table class="heat"><thead><tr><th>Purchase cohort</th><th>Buyers</th><th>1st order</th>';
+    for(let i=0;i<N;i++)h+='<th>'+(i+' mo')+'</th>';
+    h+='</tr></thead><tbody>';
+    M.forEach((m,r)=>{
+      h+='<tr class="ch-row'+(r>=FI?' ch-focus':'')+'"><td class="ch-lab">'+m+'</td>';
+      h+='<td style="background:'+bg(P.size[r],smn,smx,'#eef0f4','#aab2c4')+';font-weight:600">'+(P.size[r]/1000).toFixed(1)+'K</td>';
+      h+='<td style="background:#3f4660;color:#fff;font-weight:700">$'+P.first[r]+'</td>';
+      for(let i=0;i<N;i++){const x=P.v[r][i];
+        h+= (x==null) ? '<td class="ch-empty"></td>'
+          : '<td style="background:'+bg(x,mn,mx,'#eef1fc','#122EEA')+';color:'+ink(x,mn,mx)+'">$'+x+'</td>';}
+      h+='</tr>';
+    });
+    $('#purchHeat').innerHTML=h+'</tbody></table>';
+  })();
+
+  // ---- Month-0 conversion by cohort ----
+  const m0=L.v.map(r=>r[0]);
+  const m0col=M.map((m,i)=> i===6?C.red : i===11?C.navy : (i>=FI?C.amber:C.slate));
+  new Chart($('#cLeadM0'),{type:'bar',data:{labels:M,datasets:[{data:m0,backgroundColor:m0col,borderRadius:4}]},
+    options:{maintainAspectRatio:false,plugins:{legend:{display:false},
+      tooltip:{callbacks:{label:c=>'Month-0 conversion: '+c.parsed.y.toFixed(2)+'%',
+        afterLabel:c=>'Cohort size: '+(L.size[c.dataIndex]/1000).toFixed(1)+'K new subscribers'}}},
+      scales:{x:{grid:{display:false},ticks:{maxRotation:60,minRotation:60}},
+        y:{grid:{color:C.grid},ticks:{callback:v=>v+'%'},title:{display:true,text:'% placing 1st order in month 0'}}}}});
+
+  // ---- Cumulative lead conversion by age ----
+  const cum=a=>{let s=0;return a.map(x=>s+=x);};
+  const ageLab=Array.from({length:N},(_,i)=>'Mo '+i);
+  const pickL=[0,6,7,8,9,10], colL={0:C.slate,6:C.red,7:C.amber,8:C.sms,9:C.navy,10:C.green};
+  new Chart($('#cLeadCurve'),{type:'line',data:{labels:ageLab,datasets:pickL.map(i=>({
+      label:M[i],data:cum(L.v[i]),borderColor:colL[i],backgroundColor:colL[i],
+      tension:.3,borderWidth:2.4,pointRadius:2.2,borderDash:i<FI?[5,4]:[]}))},
+    options:{maintainAspectRatio:false,plugins:{legend:{position:'bottom'},
+      tooltip:{callbacks:{label:c=>c.dataset.label+': '+c.parsed.y.toFixed(1)+'% cumulative'}}},
+      scales:{x:{grid:{display:false},title:{display:true,text:'months since subscribe'}},
+        y:{grid:{color:C.grid},ticks:{callback:v=>v+'%'},title:{display:true,text:'cumulative lead→order rate'}}}}});
+
+  // ---- Cumulative value per customer ----
+  const cumP=i=>{const o=[P.first[i]];let s=P.first[i];P.v[i].forEach(x=>o.push(s+=x));return o;};
+  const ltvLab=['1st order'].concat(Array.from({length:N},(_,i)=>'Mo '+i));
+  const pickP=[0,6,7,8,9,10], colP={0:C.slate,6:C.red,7:C.amber,8:C.sms,9:C.navy,10:C.green};
+  new Chart($('#cPurchLTV'),{type:'line',data:{labels:ltvLab,datasets:pickP.map(i=>({
+      label:M[i],data:cumP(i),borderColor:colP[i],backgroundColor:colP[i],
+      tension:.3,borderWidth:2.4,pointRadius:2.2,borderDash:i<FI?[5,4]:[]}))},
+    options:{maintainAspectRatio:false,plugins:{legend:{position:'bottom'},
+      tooltip:{callbacks:{label:c=>c.dataset.label+': $'+c.parsed.y.toFixed(0)+' per buyer'}}},
+      scales:{x:{grid:{display:false},title:{display:true,text:'cohort age'}},
+        y:{grid:{color:C.grid},ticks:{callback:v=>'$'+v},title:{display:true,text:'cumulative $ / buyer'}}}}});
+
+  // ---- First-order AOV by cohort ----
+  const aovCol=M.map((m,i)=>i>=FI?C.amber:C.slate);
+  new Chart($('#cPurchAOV'),{type:'bar',data:{labels:M,datasets:[{data:P.first,backgroundColor:aovCol,borderRadius:4}]},
+    options:{maintainAspectRatio:false,plugins:{legend:{display:false},
+      tooltip:{callbacks:{label:c=>'First-order AOV: $'+c.parsed.y,
+        afterLabel:c=>'Buyers: '+(P.size[c.dataIndex]/1000).toFixed(1)+'K'}}},
+      scales:{x:{grid:{display:false},ticks:{maxRotation:60,minRotation:60}},
+        y:{grid:{color:C.grid},ticks:{callback:v=>'$'+v},title:{display:true,text:'avg first-order value'},suggestedMin:90}}}});
+};
+
+function build(t){ if(built[t])return; built[t]=1; try{(B[t]||(()=>{}))();}catch(e){console.error('build '+t,e);} }
+
+/* tabs */
+document.querySelectorAll('nav.tabs button').forEach(b=>b.onclick=()=>{
+  document.querySelectorAll('nav.tabs button').forEach(x=>x.classList.remove('active'));
+  document.querySelectorAll('section.panel').forEach(x=>x.classList.remove('active'));
+  b.classList.add('active'); $('#'+b.dataset.t).classList.add('active');
+  build(b.dataset.t);
+  window.scrollTo({top:0,behavior:'smooth'});
+});
+
+// build the initially-visible tab once the DOM + Chart.js are ready
+window.addEventListener('load',()=>build('exec'));
+if(document.readyState==='complete') build('exec');
 </script>
-
-
 </body>
 </html>
